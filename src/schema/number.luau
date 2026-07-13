@@ -3,12 +3,18 @@
 const Base = require("../base")
 const Types = require("../types")
 
-export type TNumber =
-    { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean? }
-    & Base.TSchema
-    & Types.InnerType<number>
+export type TNumberFormat = "i8" | "u8" | "i16le" | "u16le" | "i32le" | "u32le" | "f32le" | "f64le"
+
+export type TNumber = {
+    min: number?,
+    max: number?,
+    notInf: boolean?,
+    notNan: boolean?,
+    isFinite: boolean?,
+    format: TNumberFormat?,
+} & Base.TSchema & Types.InnerType<number>
 export type TNumberOptions = Types.Merge<
-    { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean? },
+    { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean?, format: TNumberFormat? },
     Base.TSchemaOptions
 >
 
@@ -20,6 +26,7 @@ const function Number(options: TNumberOptions?): TNumber
         notInf = options.notInf,
         notNan = options.notNan,
         isFinite = options.isFinite,
+        format = options.format,
     })
 end
 

@@ -1,3 +1,8 @@
+tbox 는 시리얼라이징이나 디시리얼라이징에 아무 영향을 미치지 않는
+
+
+모든 스키마는 defaultUntypedNamespace 에 기본적으로 등록되어야합니다
+
 ## Code styles
 
 ### 왜 타입 명에 TString 과 같이 T 를 접두사로 사용하나요?

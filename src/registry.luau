@@ -16,13 +16,14 @@ export type TypeNamespace = {
     canBeNil: (self: TypeNamespace, schema: Base.TSchema) -> boolean,
     inspectInner: (self: TypeNamespace, schema: Base.TSchema) -> { Base.TSchema }?,
     registerType: <FactoryFunction>(ns: TypeNamespace, typeDef: Base.TypeDef<FactoryFunction>) -> TypeNamespace,
-    clone: (self: TypeNamespace) -> TypeNamespace,
+    clone: (self: TypeNamespace, newName: string) -> TypeNamespace,
+    namespaceName: string,
 }
 
 const function getTypeDef(self: TypeNamespace, tag: string): Base.TypeDef<any>
     const def = (self :: TypeNamespaceInternal)._types[tag]
     if not def then
-        error(`Type schema '{tag}' does not exist in this type namespace`)
+        error(`Type schema '{tag}' does not exist in this type namespace '{self.namespaceName}'`)
     end
     return def
 end
@@ -73,14 +74,15 @@ const function registerType<FactoryFunction>(self: TypeNamespace, typeDef: Base.
     return self
 end
 
-const function clone(self: TypeNamespace): TypeNamespace
+const function clone(self: TypeNamespace, newName: string): TypeNamespace
     const cloned = table.clone(self)
     const nsInternal = cloned :: TypeNamespaceInternal
     nsInternal._types = table.clone(nsInternal._types)
+    cloned.namespaceName = newName
     return cloned
 end
 
-const function newNamespace(): TypeNamespace
+const function newNamespace(namespaceName: string): TypeNamespace
     return {
         _types = {},
         runtimeTypeCheck = runtimeTypeCheck,
@@ -91,10 +93,11 @@ const function newNamespace(): TypeNamespace
         canBeNil = canBeNil,
         inspectInner = inspectInner,
         clone = clone,
+        namespaceName = namespaceName,
     }
 end
 
-const defaultUntypedNamespace = newNamespace()
+const defaultUntypedNamespace = newNamespace("DefaultNamespace")
 
 return {
     newNamespace = newNamespace,

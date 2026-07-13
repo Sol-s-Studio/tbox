@@ -1,9 +1,9 @@
 --!strict
 
-const Base = require("../base")
-const Types = require("../types")
-const Util = require("../util")
-const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
+const Base = require("../../base")
+const Types = require("../../types")
+const Util = require("../../util")
+const defaultUntypedNamespace = require("../../registry").defaultUntypedNamespace
 
 export type TObject<Props> =
     { props: { [string]: Base.TSchema }, allowUnknownProps: boolean? }

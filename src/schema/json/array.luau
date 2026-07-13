@@ -1,18 +1,17 @@
 --!strict
 
 -- Inner must not be nil
-
-const Base = require("../base")
-const Types = require("../types")
-const Util = require("../util")
-const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
+const Base = require("../../base")
+const Types = require("../../types")
+const Util = require("../../util")
+const defaultUntypedNamespace = require("../../registry").defaultUntypedNamespace
 
 export type TArray<InnerSchema> =
-    { maxItems: number?, minItems: number?, inner: InnerSchema }
+    { maxItems: number?, minItems: number?, inner: InnerSchema, fixedLength: number? }
     & Base.TSchema
     & Types.InnerType<{ Types.Static<InnerSchema> }>
 export type TArrayOptions = Types.Merge<
-    { maxItems: number?, minItems: number?, numericIndexOnly: boolean? },
+    { maxItems: number?, minItems: number?, numericIndexOnly: boolean?, fixedLength: number? },
     Base.TSchemaOptions
 >
 
@@ -24,6 +23,7 @@ const function Array<InnerSchema>(target: InnerSchema, options: TArrayOptions?):
         maxItems = options.maxItems,
         minItems = options.minItems,
         numericIndexOnly = options.numericIndexOnly,
+        fixedLength = options.fixedLength,
     })
 end
 
@@ -52,7 +52,7 @@ const function runtimeTypeChecker(schema: TArray<any>, value: any): (() -> strin
         const check = defaultUntypedNamespace:runtimeTypeCheck(schema.inner, innerValue)
         if check then
             return function()
-                return `array value inner type check failed at index {key}.\n{Util.indent(check())}`
+                return `array element type check failed at index {key}.\n{Util.indent(check())}`
             end
         end
     end
@@ -62,6 +62,11 @@ end
 
 const function runtimeConstraintChecker(schema: TArray<any>, value: { any }): (() -> string)?
     const len = #value
+    if schema.fixedLength and len ~= schema.fixedLength then
+        return function()
+            return `allowed length is {schema.fixedLength}`
+        end
+    end
     if schema.maxItems and len > schema.maxItems then
         return function()
             return `array too long. maximum allowed length is {schema.maxItems}`
@@ -77,7 +82,7 @@ const function runtimeConstraintChecker(schema: TArray<any>, value: { any }): ((
         const check = defaultUntypedNamespace:runtimeConstraintCheck(schema.inner, innerValue)
         if check then
             return function()
-                return `array value inner constraint check failed at index {key}.\n{Util.indent(check())}`
+                return `array element constraint check failed at index {key}.\n{Util.indent(check())}`
             end
         end
     end

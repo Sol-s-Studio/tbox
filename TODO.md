@@ -13,3 +13,6 @@ runtimeConstraintCheck: 런타임에 제약조건이 맞는지 체크. 숫자의
 not null 이나 부분타입 등 어떻게 만들지
 
 런타임 데이터 구조도 필요
+
+Squash 바인딩 필요
+https://data-oriented-house.github.io/Squash/api/Squash/#array
