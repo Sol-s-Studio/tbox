@@ -2,24 +2,24 @@
 
 -- Inner must not be nil
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 const Util = require("../util")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 
 export type TArray<InnerSchema> =
     { maxItems: number?, minItems: number?, inner: InnerSchema }
-    & SchemaFactory.TSchema
-    & Types.InnerType<{ Types.Static<InnerSchema>? }>
+    & Base.TSchema
+    & Types.InnerType<{ Types.Static<InnerSchema> }>
 export type TArrayOptions = Types.Merge<
     { maxItems: number?, minItems: number?, numericIndexOnly: boolean? },
-    SchemaFactory.TSchemaOptions
+    Base.TSchemaOptions
 >
 
 const function Array<InnerSchema>(target: InnerSchema, options: TArrayOptions?): TArray<InnerSchema>
     options = options or ({} :: TArrayOptions)
 
-    return SchemaFactory<<TArray<InnerSchema>>>("Array", options, {
+    return Base.SchemaFactory<<TArray<InnerSchema>>>("Array", options, {
         inner = target,
         maxItems = options.maxItems,
         minItems = options.minItems,
@@ -33,10 +33,6 @@ end
 
 const function formatter(schema: TArray<any>): string
     return `TArray<{defaultUntypedNamespace:format(schema.inner)}>`
-end
-
-const function canBeNil(_schema: TArray<any>): boolean
-    return false
 end
 
 const function runtimeTypeChecker(schema: TArray<any>, value: any): (() -> string)?
@@ -89,12 +85,14 @@ const function runtimeConstraintChecker(schema: TArray<any>, value: { any }): ((
     return nil
 end
 
-return {
-    typeName = "Array",
-    factoryFunc = Array,
+const function inspectInner(schema: TArray<any>): { Base.TSchema }?
+    return { schema.inner }
+end
+
+return Base.TypeDefFactory("Array", Array, {
     runtimeTypeChecker = runtimeTypeChecker,
     runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+    inspectInner = inspectInner,
+})

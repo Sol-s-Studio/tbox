@@ -1,21 +1,23 @@
 --!strict
-const Types = require("./types")
+const Types = require("@self/types")
 
-const String = require("./schema/string")
-const Object = require("./schema/object")
-const Number = require("./schema/number")
-const Boolean = require("./schema/boolean")
-const Unsafe = require("./schema/unsafe")
-const Any = require("./schema/any")
+const String = require("@self/schema/string")
+const Object = require("@self/schema/object")
+const Number = require("@self/schema/number")
+const Boolean = require("@self/schema/boolean")
+const Unsafe = require("@self/schema/unsafe")
+const Nil = require("@self/schema/nil")
+const Any = require("@self/schema/any")
 
-const Default = require("./schema/default")
-const Optional = require("./schema/optional")
-const Singleton = require("./schema/singleton")
+const Optional = require("@self/schema/optional")
+const Singleton = require("@self/schema/singleton")
 
-const Array = require("./schema/array")
+const Array = require("@self/schema/array")
+const Union = require("@self/schema/union")
 -- const Map
 
 export type Static<T> = Types.Static<T>
+export type Tuple<Components...> = Types.Tuple<Components...>
 
 export type TString = String.TString
 export type TStringOptions = String.TStringOptions
@@ -27,11 +29,11 @@ export type TBoolean = Boolean.TBoolean
 export type TBooleanOptions = Boolean.TBooleanOptions
 export type TUnsafe<T> = Unsafe.TUnsafe<T>
 export type TUnsafeOptions = Unsafe.TUnsafeOptions
+export type TNil = Nil.TNil
+export type TNilOptions = Nil.TNilOptions
 export type TAny = Any.TAny
 export type TAnyOptions = Any.TAnyOptions
 
-export type TDefault<InnerSchema> = Default.TDefault<InnerSchema>
-export type TDefaultOptions = Default.TDefaultOptions
 export type TOptional<InnerSchema> = Optional.TOptional<InnerSchema>
 export type TOptionalOptions = Optional.TOptionalOptions
 export type TSingleton<ConstType> = Singleton.TSingleton<ConstType>
@@ -39,8 +41,10 @@ export type TSingletonOptions = Singleton.TSingletonOptions
 
 export type TArray<InnerSchema> = Array.TArray<InnerSchema>
 export type TArrayOptions = Array.TArrayOptions
+export type TUnion<Components...> = Union.TUnion<Components...>
+export type TUnionOptions = Union.TUnionOptions
 
-const registry = require("./registry")
+const registry = require("@self/registry")
 
 const defaultNs = registry.defaultUntypedNamespace
     :registerType(String)
@@ -48,21 +52,26 @@ const defaultNs = registry.defaultUntypedNamespace
     :registerType(Number)
     :registerType(Boolean)
     :registerType(Unsafe)
+    :registerType(Nil)
     :registerType(Any)
-    :registerType(Default)
     :registerType(Optional)
     :registerType(Singleton)
-    :registerType(Array) :: registry.TypeNamespace & {
+    :registerType(Array)
+    :registerType(Union) :: registry.TypeNamespace & {
     String: typeof(String.factoryFunc),
     Object: typeof(Object.factoryFunc),
     Number: typeof(Number.factoryFunc),
     Boolean: typeof(Boolean.factoryFunc),
     Unsafe: typeof(Unsafe.factoryFunc),
+    Nil: typeof(Nil.factoryFunc),
     Any: typeof(Any.factoryFunc),
-    Default: typeof(Default.factoryFunc),
     Optional: typeof(Optional.factoryFunc),
     Singleton: typeof(Singleton.factoryFunc),
     Array: typeof(Array.factoryFunc),
+    Union: typeof(Union.factoryFunc),
+    Tuple: typeof(Types.Tuple),
 }
+
+defaultNs.Tuple = Types.Tuple
 
 return defaultNs

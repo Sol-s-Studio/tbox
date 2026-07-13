@@ -1,14 +1,14 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 
-export type TAny = {} & SchemaFactory.TSchema & Types.InnerType<any>
-export type TAnyOptions = Types.Merge<{}, SchemaFactory.TSchemaOptions>
+export type TAny = {} & Base.TSchema & Types.InnerType<any>
+export type TAnyOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Any(options: TAnyOptions?): TAny
     options = options or ({} :: TAnyOptions)
-    return SchemaFactory<<TAny>>("Any", options, {})
+    return Base.SchemaFactory<<TAny>>("Any", options, {})
 end
 
 const function luauBuilder(schema: TAny): string
@@ -27,16 +27,9 @@ const function runtimeTypeChecker(schema: TAny, value: any): (() -> string)?
     return nil
 end
 
-const function runtimeConstraintChecker(schema: TAny, value: any): (() -> string)?
-    return nil
-end
-
-return {
-    typeName = "Any",
-    factoryFunc = Any,
+return Base.TypeDefFactory("Any", Any, {
     runtimeTypeChecker = runtimeTypeChecker,
-    runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
     canBeNil = canBeNil,
-}
+})

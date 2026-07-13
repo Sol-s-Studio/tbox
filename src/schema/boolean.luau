@@ -1,14 +1,14 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 
-export type TBoolean = {} & SchemaFactory.TSchema & Types.InnerType<boolean>
-export type TBooleanOptions = Types.Merge<{}, SchemaFactory.TSchemaOptions>
+export type TBoolean = {} & Base.TSchema & Types.InnerType<boolean>
+export type TBooleanOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Boolean(options: TBooleanOptions?): TBoolean
     options = options or ({} :: TBooleanOptions)
-    return SchemaFactory<<TBoolean>>("Boolean", options, {})
+    return Base.SchemaFactory<<TBoolean>>("Boolean", options, {})
 end
 
 const function luauBuilder(schema: TBoolean): string
@@ -17,10 +17,6 @@ end
 
 const function formatter(schema: TBoolean): string
     return "TBoolean"
-end
-
-const function canBeNil(_schema: TBoolean): boolean
-    return false
 end
 
 const function runtimeTypeChecker(schema: TBoolean, value: any): (() -> string)?
@@ -33,16 +29,8 @@ const function runtimeTypeChecker(schema: TBoolean, value: any): (() -> string)?
     return nil
 end
 
-const function runtimeConstraintChecker(schema: TBoolean, value: boolean): (() -> string)?
-    return nil
-end
-
-return {
-    typeName = "Boolean",
-    factoryFunc = Boolean,
+return Base.TypeDefFactory("Boolean", Boolean, {
     runtimeTypeChecker = runtimeTypeChecker,
-    runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+})

@@ -1,19 +1,16 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 const Util = require("../util")
 
-export type TOptional<InnerSchema> =
-    { inner: InnerSchema }
-    & SchemaFactory.TSchema
-    & Types.InnerType<Types.Static<InnerSchema>?>
-export type TOptionalOptions = Types.Merge<{}, SchemaFactory.TSchemaOptions>
+export type TOptional<InnerSchema> = { inner: InnerSchema } & Base.TSchema & Types.InnerType<Types.Static<InnerSchema>?>
+export type TOptionalOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Optional<InnerSchema>(target: InnerSchema, options: TOptionalOptions?): TOptional<InnerSchema>
     options = options or ({} :: TOptionalOptions)
-    return SchemaFactory<<TOptional<InnerSchema>>>("Optional", options, { inner = target })
+    return Base.SchemaFactory<<TOptional<InnerSchema>>>("Optional", options, { inner = target })
 end
 
 const function luauBuilder(schema: TOptional<any>): string
@@ -50,12 +47,15 @@ const function runtimeConstraintChecker(schema: TOptional<any>, value: any): (()
     return defaultUntypedNamespace:runtimeConstraintCheck(schema.inner, value)
 end
 
-return {
-    typeName = "Optional",
-    factoryFunc = Optional,
+const function inspectInner(schema: TOptional<any>): { Base.TSchema }?
+    return { schema.inner }
+end
+
+return Base.TypeDefFactory("Optional", Optional, {
     runtimeTypeChecker = runtimeTypeChecker,
     runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
     canBeNil = canBeNil,
-}
+    inspectInner = inspectInner,
+})

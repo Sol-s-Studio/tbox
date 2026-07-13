@@ -1,14 +1,11 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 const Util = require("../util")
 
-export type TSingleton<ConstType> =
-    { value: ConstType, valueType: string }
-    & SchemaFactory.TSchema
-    & Types.InnerType<ConstType>
-export type TSingletonOptions = Types.Merge<{}, SchemaFactory.TSchemaOptions>
+export type TSingleton<ConstType> = { value: ConstType, valueType: string } & Base.TSchema & Types.InnerType<ConstType>
+export type TSingletonOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 type function CheckIsSingleton(ty: type): type
     if not ty:is("singleton") then
@@ -23,7 +20,7 @@ end
 const function Singleton<ConstType>(singleton: ConstType, options: TSingletonOptions?): TSingleton<CheckIsSingleton<ConstType>>
     local valueType = typeof(singleton)
     options = options or ({} :: TSingletonOptions)
-    return SchemaFactory<<TSingleton<ConstType>>>("Singleton", options, {
+    return Base.SchemaFactory<<TSingleton<ConstType>>>("Singleton", options, {
         value = singleton,
         valueType = valueType,
     })
@@ -43,15 +40,9 @@ const function formatter(schema: TSingleton<any>): string
     return `TSingleton<{luauBuilder(schema)}>`
 end
 
-const function canBeNil(schema: TSingleton<any>): boolean
-    return false
-end
-
 const function runtimeTypeChecker(schema: TSingleton<any>, value: any): (() -> string)?
     if schema.value ~= value then
-    end
-    const ty = typeof(value)
-    if ty ~= schema.valueType then
+        const ty = typeof(value)
         return function()
             const luau = luauBuilder(schema)
             return `{luau} expected for Singleton<{luau}>, but got {ty}`
@@ -61,16 +52,8 @@ const function runtimeTypeChecker(schema: TSingleton<any>, value: any): (() -> s
     return nil
 end
 
-const function runtimeConstraintChecker(schema: TSingleton<any>, value: any): (() -> string)?
-    return nil
-end
-
-return {
-    typeName = "Singleton",
-    factoryFunc = Singleton,
+return Base.TypeDefFactory("Singleton", Singleton, {
     runtimeTypeChecker = runtimeTypeChecker,
-    runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+})

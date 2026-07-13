@@ -2,7 +2,7 @@
 
 export type InnerType<T> = { __inner: T }
 
--- hasDefault 를 적용하여 __inner: T 를 얻습니다
+-- Schema 의 __inner: T 를 얻습니다
 export type function Static(target: type): type
     if target:is("intersection") or target:is("union") then
         for _, comp in target:components() do
@@ -18,6 +18,8 @@ export type function Static(target: type): type
     return types.never
 end
 
+-- Object props 부분을 받아 내부 요소에 대해 Static 을 가한
+-- props 를 얻습니다.
 export type function TObjectPropsFlatten(inner: type): type
     if inner:is("any") then
         return types.newtable()
@@ -62,4 +64,38 @@ export type function MergeInner(fn: type): type
 end
 export type Merge<T...> = MergeInner<(T...) -> ()>
 
-return {}
+-- 함수나 union 등에서 여러 타입을 받기 위한 tuple 구조
+-- 내부에 타입을 TupleType 으로 보존하면서, 받은 런타임 인자를
+-- [number]: any 에 저장합니다.
+export type TupleType<Components...> = (Components...) -> ()
+export type Tuple<Components...> = { [number]: any, n: number, _tup: TupleType<Components...> }
+const function Tuple<Components...>(...: Components...): Tuple<Components...>
+    return table.pack<<any>>(...) :: Tuple<Components...>
+end
+export type function GetTupleType(tup: type): type
+    if tup:is("any") then
+        return types.any
+    end
+    const inner = tup:readproperty(types.singleton("_tup"))
+    if not inner then
+        print("GetTupleType: tup is not tuple")
+        return types.never
+    end
+    return inner
+end
+
+-- TupleType 내부 요소를 Schema 라고 가정 후 __inner: T 를 얻어 새로운
+-- TupleType<T...> 를 생성합니다
+export type function StaticTuple(tupty: type): type
+    if tupty:is("any") then
+        return types.newfunction({ head = { types.any } })
+    end
+    const head: { type } = tupty:parameters().head or {}
+    const staticHead = table.create(#head) :: { type }
+    for _, innerType in head do
+        table.insert(staticHead, Static(innerType) :: type)
+    end
+    return types.newfunction({ head = staticHead })
+end
+
+return { Tuple = Tuple }

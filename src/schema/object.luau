@@ -1,21 +1,21 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 const Util = require("../util")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 
 export type TObject<Props> =
-    { props: { [string]: SchemaFactory.TSchema }, allowUnknownProps: boolean? }
-    & SchemaFactory.TSchema
+    { props: { [string]: Base.TSchema }, allowUnknownProps: boolean? }
+    & Base.TSchema
     & Types.InnerType<Types.TObjectPropsFlatten<Props>>
 export type TObjectOptions = Types.Merge<{
     allowUnknownProps: boolean?,
-}, SchemaFactory.TSchemaOptions>
+}, Base.TSchemaOptions>
 
-const function Object<Props>(props: { [string]: SchemaFactory.TSchema } & Props, options: TObjectOptions?): TObject<Props>
+const function Object<Props>(props: { [string]: Base.TSchema } & Props, options: TObjectOptions?): TObject<Props>
     options = options or ({} :: TObjectOptions)
-    return SchemaFactory<<TObject<Props>>>("Object", options, {
+    return Base.SchemaFactory<<TObject<Props>>>("Object", options, {
         props = props,
         allowUnknownProps = options.allowUnknownProps,
     })
@@ -39,10 +39,6 @@ const function formatter(schema: TObject<any>): string
     end
 
     return `TObject<\{ {table.concat(items, ", ")} }>`
-end
-
-const function canBeNil(_schema: TObject<any>): boolean
-    return false
 end
 
 const function runtimeTypeChecker(schema: TObject<any>, value: any): (() -> string)?
@@ -86,6 +82,8 @@ const function runtimeTypeChecker(schema: TObject<any>, value: any): (() -> stri
     return nil
 end
 
+-- 확장된 TObject 의 경우 상위 TObject 와 공변적(Covariance) 관계를 가지기 때문에
+-- 이 경우도 적합한 타입으로 선택되어야합니다. 따라서 확장 TObject 에 대한 에러 처리는 제약 조건 확인입니다.
 const function runtimeConstraintChecker(schema: TObject<any>, value: any): (() -> string)?
     if not schema.allowUnknownProps then
         for key: any, _innerValue in value do
@@ -102,12 +100,20 @@ const function runtimeConstraintChecker(schema: TObject<any>, value: any): (() -
     return nil
 end
 
-return {
-    typeName = "Object",
-    factoryFunc = Object,
+const function inspectInner(schema: TObject<any>): { Base.TSchema }
+    const innerSchemas: { Base.TSchema } = {}
+
+    for _, inner in schema.props do
+        table.insert(innerSchemas, inner)
+    end
+
+    return innerSchemas
+end
+
+return Base.TypeDefFactory("Object", Object, {
     runtimeTypeChecker = runtimeTypeChecker,
     runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+    inspectInner = inspectInner,
+})

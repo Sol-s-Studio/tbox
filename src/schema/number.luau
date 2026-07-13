@@ -1,20 +1,20 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 
 export type TNumber =
     { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean? }
-    & SchemaFactory.TSchema
+    & Base.TSchema
     & Types.InnerType<number>
 export type TNumberOptions = Types.Merge<
     { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean? },
-    SchemaFactory.TSchemaOptions
+    Base.TSchemaOptions
 >
 
 const function Number(options: TNumberOptions?): TNumber
     options = options or ({} :: TNumberOptions)
-    return SchemaFactory<<TNumber>>("Number", options, {
+    return Base.SchemaFactory<<TNumber>>("Number", options, {
         min = options.min,
         max = options.max,
         notInf = options.notInf,
@@ -29,10 +29,6 @@ end
 
 const function formatter(_schema: TNumber): string
     return "TNumber"
-end
-
-const function canBeNil(_schema: TNumber): boolean
-    return false
 end
 
 const function runtimeTypeChecker(schema: TNumber, value: any): (() -> string)?
@@ -86,12 +82,9 @@ const function runtimeConstraintChecker(schema: TNumber, value: number): (() -> 
     return nil
 end
 
-return {
-    typeName = "Number",
-    factoryFunc = Number,
+return Base.TypeDefFactory("Number", Number, {
     runtimeTypeChecker = runtimeTypeChecker,
     runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+})

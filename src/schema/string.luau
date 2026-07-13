@@ -1,14 +1,14 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 
-export type TString = { maxLength: number?, minLength: number? } & SchemaFactory.TSchema & Types.InnerType<string>
-export type TStringOptions = Types.Merge<{ maxLength: number?, minLength: number? }, SchemaFactory.TSchemaOptions>
+export type TString = { maxLength: number?, minLength: number? } & Base.TSchema & Types.InnerType<string>
+export type TStringOptions = Types.Merge<{ maxLength: number?, minLength: number? }, Base.TSchemaOptions>
 
 const function String(options: TStringOptions?): TString
     options = options or ({} :: TStringOptions)
-    return SchemaFactory<<TString>>("String", options, {
+    return Base.SchemaFactory<<TString>>("String", options, {
         maxLength = options.maxLength,
         minLength = options.minLength,
     })
@@ -20,10 +20,6 @@ end
 
 const function formatter(schema: TString): string
     return "TString"
-end
-
-const function canBeNil(schema: TString): boolean
-    return false
 end
 
 const function runtimeTypeChecker(schema: TString, value: any): (() -> string)?
@@ -51,12 +47,9 @@ const function runtimeConstraintChecker(schema: TString, value: string): (() -> 
     return nil
 end
 
-return {
-    typeName = "String",
-    factoryFunc = String,
+return Base.TypeDefFactory("String", String, {
     runtimeTypeChecker = runtimeTypeChecker,
     runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
-    canBeNil = canBeNil,
-}
+})

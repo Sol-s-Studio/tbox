@@ -1,6 +1,6 @@
 --!strict
 
-const Type = require("./src/index")
+const Type = require("./src")
 
 const box = Type.Object({
     hello = Type.String(),
@@ -50,3 +50,35 @@ print(Type:luauBuild(box))
 -- format typebox for debugging
 print(Type:format(box))
 -- INFO: TObject<{ hello: TString, ["1aaa"]: TNumber, world: TNumber }>
+
+-- const unionTest = Type.Union(Type.Tuple(Type.Number(), Type.Optional(Type.String())))
+-- type unionTest = Type.Static<typeof(unionTest)> -- (number | string)?
+
+const objectUnionTest = Type.Union(
+    Type.Tuple(
+        Type.Object({
+            a = Type.Boolean(),
+            c = Type.Number(),
+        }),
+        Type.Object({
+            b = Type.Boolean(),
+            c = Type.Number(),
+        })
+    ),
+    { id = "Id here...", description = "test" }
+)
+type objectUnionTest = Type.Static<typeof(objectUnionTest)>
+-- type objectUnionTest = {
+--  a: boolean,
+--  c: number
+-- } | {
+--  b: boolean,
+--  c: number
+-- }
+const check5 = Type:runtimeTypeCheck(objectUnionTest, { c = 1 })
+print(check5 and check5())
+-- union value check failed. value did not match any of the union members.
+--   branch 1: required object property 'a' not exist.
+--   branch 2: required object property 'b' not exist.
+const check6 = Type:runtimeTypeCheck(objectUnionTest, { a = true, c = 1 })
+print(check6 and check6()) -- nil

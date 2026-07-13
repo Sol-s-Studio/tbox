@@ -1,14 +1,14 @@
 --!strict
 
-const SchemaFactory = require("../base")
+const Base = require("../base")
 const Types = require("../types")
 
-export type TUnsafe<T> = { luauType: string, canBeNil: boolean } & SchemaFactory.TSchema & Types.InnerType<T>
-export type TUnsafeOptions = Types.Merge<{ luauType: string?, canBeNil: boolean? }, SchemaFactory.TSchemaOptions>
+export type TUnsafe<T> = { luauType: string, canBeNil: boolean } & Base.TSchema & Types.InnerType<T>
+export type TUnsafeOptions = Types.Merge<{ luauType: string?, canBeNil: boolean? }, Base.TSchemaOptions>
 
 const function Unsafe<T>(options: TUnsafeOptions?): TUnsafe<T>
     options = options or ({} :: TUnsafeOptions)
-    return SchemaFactory<<TUnsafe<T>>>("Unsafe", options, {
+    return Base.SchemaFactory<<TUnsafe<T>>>("Unsafe", options, {
         luauType = options.luauType or "unknown",
         canBeNil = options.canBeNil or false,
     })
@@ -30,16 +30,9 @@ const function runtimeTypeChecker(schema: TUnsafe<any>, value: any): (() -> stri
     return nil
 end
 
-const function runtimeConstraintChecker(schema: TUnsafe<any>, value: any): (() -> string)?
-    return nil
-end
-
-return {
-    typeName = "Unsafe",
-    factoryFunc = Unsafe,
+return Base.TypeDefFactory("Unsafe", Unsafe, {
     runtimeTypeChecker = runtimeTypeChecker,
-    runtimeConstraintChecker = runtimeConstraintChecker,
     luauBuilder = luauBuilder,
     formatter = formatter,
     canBeNil = canBeNil,
-}
+})
