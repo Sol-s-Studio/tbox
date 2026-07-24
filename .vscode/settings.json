@@ -3,4 +3,8 @@
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "JohnnyMorganz.stylua"
     },
+    "luau-lsp.fflags.enableNewSolver": true,
+    "luau-lsp.fflags.override": {
+        "LuauDoNotExportBrokenTypeFunction": "false",
+    }
 }

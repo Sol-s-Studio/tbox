@@ -98,4 +98,10 @@ export type function StaticTuple(tupty: type): type
     return types.newfunction({ head = staticHead })
 end
 
+-- 튜플 안 요소를 모아 union 을 생성합니다
+export type function TupleTypeToUnion(tupty: type): type
+    const head: { type } = tupty:parameters().head or {}
+    return types.unionof(table.unpack(head))
+end
+
 return { Tuple = Tuple }

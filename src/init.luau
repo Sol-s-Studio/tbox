@@ -15,6 +15,7 @@ const Singleton = require("@self/schema/singleton")
 const Array = require("@self/schema/json/array")
 const Union = require("@self/schema/union")
 const Map = require("@self/schema/map")
+const Vector = require("@self/schema/vector")
 
 export type Static<T> = Types.Static<T>
 export type Tuple<Components...> = Types.Tuple<Components...>
@@ -45,6 +46,8 @@ export type TUnion<Tup> = Union.TUnion<Tup>
 export type TUnionOptions = Union.TUnionOptions
 export type TMap<Key, Value> = Map.TMap<Key, Value>
 export type TMapOptions = Map.TMapOptions
+export type TVector = Vector.TVector
+export type TVectorOptions = Vector.TVectorOptions
 
 const registry = require("@self/registry")
 
@@ -60,7 +63,8 @@ const defaultNamespace = registry.defaultUntypedNamespace
     :registerType(Singleton)
     :registerType(Array)
     :registerType(Union)
-    :registerType(Map) :: registry.TypeNamespace & {
+    :registerType(Map)
+    :registerType(Vector) :: registry.TypeNamespace & {
     String: typeof(String.factoryFunc),
     Object: typeof(Object.factoryFunc),
     Number: typeof(Number.factoryFunc),
@@ -73,33 +77,7 @@ const defaultNamespace = registry.defaultUntypedNamespace
     Array: typeof(Array.factoryFunc),
     Union: typeof(Union.factoryFunc),
     Map: typeof(Map.factoryFunc),
-    Tuple: typeof(Types.Tuple),
-}
-
-const jsonCompatNamespace = registry
-    .newNamespace("JsonCompat")
-    :registerType(String)
-    :registerType(Object)
-    :registerType(Number)
-    :registerType(Boolean)
-    :registerType(Unsafe)
-    :registerType(Nil)
-    :registerType(Any)
-    :registerType(Optional)
-    :registerType(Singleton)
-    :registerType(Array)
-    :registerType(Union) :: registry.TypeNamespace & {
-    String: typeof(String.factoryFunc),
-    Object: typeof(Object.factoryFunc),
-    Number: typeof(Number.factoryFunc),
-    Boolean: typeof(Boolean.factoryFunc),
-    Unsafe: typeof(Unsafe.factoryFunc),
-    Nil: typeof(Nil.factoryFunc),
-    Any: typeof(Any.factoryFunc),
-    Optional: typeof(Optional.factoryFunc),
-    Singleton: typeof(Singleton.factoryFunc),
-    Array: typeof(Array.factoryFunc),
-    Union: typeof(Union.factoryFunc),
+    Vector: typeof(Vector.factoryFunc),
     Tuple: typeof(Types.Tuple),
 }
 

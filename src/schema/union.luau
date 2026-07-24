@@ -5,19 +5,13 @@ const Types = require("../types")
 const Util = require("../util")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 
-export type TUnion<Tuple> =
-    { components: Tuple }
-    & Base.TSchema
-    & Types.InnerType<TupleTypeToUnion<Types.StaticTuple<Types.GetTupleType<Tuple>>>>
+export type TUnion<Tuple> = { components: Tuple } & Base.TSchema & Types.InnerType<
+    Types.TupleTypeToUnion<Types.StaticTuple<Types.GetTupleType<Tuple>>>
+>
 -- export type TUnion<Components...> = { components: Types.Tuple<Components...> } & Base.TSchema & Types.InnerType<
 --     TupleTypeToUnion<Types.StaticTuple<Types.TupleType<Components...>>>
 -- >
 export type TUnionOptions = Types.Merge<{}, Base.TSchemaOptions>
-
-type function TupleTypeToUnion(tupty: type): type
-    const head: { type } = tupty:parameters().head or {}
-    return types.unionof(table.unpack(head))
-end
 
 -- Components... 를 사용할 수 있지만, new solver 는 infer 중에 부작용이 있으므로
 -- 명시적으로 요소를 추출합니다. (만약 pack 에 대해 infer 된다면 다른 후행 함수 인자 요소가 오염됩니다)
