@@ -1,0 +1,12 @@
+{
+  "name": "tbox",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "TBox": {
+        "$path": "src"
+      }
+    }
+  }
+}

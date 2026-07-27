@@ -97,6 +97,16 @@ const function runtimeConstraintChecker(schema: TObject<any>, value: any): (() -
         end
     end
 
+    for key: any, innerValue: any in value do
+        const valueSchema = schema.props[key]
+        const check = defaultUntypedNamespace:runtimeConstraintCheck(valueSchema, innerValue)
+        if check then
+            return function()
+                return `object property '{key}' constraint check failed.\n{Util.indent(check())}`
+            end
+        end
+    end
+
     return nil
 end
 

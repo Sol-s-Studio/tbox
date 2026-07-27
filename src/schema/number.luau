@@ -12,11 +12,19 @@ export type TNumber = {
     notNan: boolean?,
     isFinite: boolean?,
     format: TNumberFormat?,
+    multipleOf: number?,
+    multipleOfOffset: number?,
 } & Base.TSchema & Types.InnerType<number>
-export type TNumberOptions = Types.Merge<
-    { min: number?, max: number?, notInf: boolean?, notNan: boolean?, isFinite: boolean?, format: TNumberFormat? },
-    Base.TSchemaOptions
->
+export type TNumberOptions = Types.Merge<{
+    min: number?,
+    max: number?,
+    notInf: boolean?,
+    notNan: boolean?,
+    isFinite: boolean?,
+    format: TNumberFormat?,
+    multipleOf: number?,
+    multipleOfOffset: number?,
+}, Base.TSchemaOptions>
 
 const function Number(options: TNumberOptions?): TNumber
     options = options or ({} :: TNumberOptions)
@@ -27,6 +35,8 @@ const function Number(options: TNumberOptions?): TNumber
         notNan = options.notNan,
         isFinite = options.isFinite,
         format = options.format,
+        multipleOf = options.multipleOf,
+        multipleOfOffset = options.multipleOfOffset,
     })
 end
 
@@ -82,6 +92,16 @@ const function runtimeConstraintChecker(schema: TNumber, value: number): (() -> 
                 else
                     return `value must be a non-finite number, but a finite value was provided`
                 end
+            end
+        end
+    end
+
+    if schema.multipleOf ~= nil then
+        const offset = schema.multipleOfOffset or 0
+        const result = value % schema.multipleOf
+        if result ~= offset then
+            return function()
+                return `value must be multiple of {schema.multipleOf} with offset {offset}, but got {value}`
             end
         end
     end

@@ -2,6 +2,19 @@
 
 const Type = require("./src")
 
+const testBox = Type.Object({
+    a = Type.Number({
+        notInf = true,
+        notNan = true,
+    }),
+})
+
+const res = Type:runtimeConstraintCheck(testBox, {
+    a = math.huge,
+})
+
+print(res and res())
+
 const box = Type.Object({
     hello = Type.String(),
     world = Type.Number(),
