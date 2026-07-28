@@ -7,6 +7,7 @@ export type TVector =
     { minMagnitude: number?, maxMagnitude: number?, min: vector?, max: vector? }
     & Base.TSchema
     & Types.InnerType<vector>
+    & Types.NamedType<"Vector">
 export type TVectorOptions = Types.Merge<
     { minMagnitude: number?, maxMagnitude: number?, min: vector?, max: vector? },
     Base.TSchemaOptions
@@ -79,15 +80,15 @@ const function runtimeConstraintChecker(schema: TVector, value: vector): (() -> 
     if min then
         if value.x < min.x then
             return function()
-                return `x value too big. minimum allowed x value is {min.x}`
+                return `x value too small. minimum allowed x value is {min.x}`
             end
         elseif value.y < min.y then
             return function()
-                return `y value too big. minimum allowed y value is {min.y}`
+                return `y value too small. minimum allowed y value is {min.y}`
             end
         elseif value.z < min.z then
             return function()
-                return `z value too big. minimum allowed z value is {min.z}`
+                return `z value too small. minimum allowed z value is {min.z}`
             end
         end
     end

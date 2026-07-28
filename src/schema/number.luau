@@ -14,7 +14,7 @@ export type TNumber = {
     format: TNumberFormat?,
     multipleOf: number?,
     multipleOfOffset: number?,
-} & Base.TSchema & Types.InnerType<number>
+} & Base.TSchema & Types.InnerType<number> & Types.NamedType<"Number">
 export type TNumberOptions = Types.Merge<{
     min: number?,
     max: number?,
@@ -79,7 +79,7 @@ const function runtimeConstraintChecker(schema: TNumber, value: number): (() -> 
 
     if schema.min and value < schema.min then
         return function()
-            return `number too small. minimum allowed value is {schema.max}`
+            return `number too small. minimum allowed value is {schema.min}`
         end
     end
 
@@ -88,9 +88,9 @@ const function runtimeConstraintChecker(schema: TNumber, value: number): (() -> 
         if schema.isFinite ~= isFinite then
             return function()
                 if schema.isFinite then
-                    return `value must be a finite number, but a non-finite value was provided`
+                    return `value must be a finite number, but a non-finite value {value} was provided`
                 else
-                    return `value must be a non-finite number, but a finite value was provided`
+                    return `value must be a non-finite number, but a finite value {value} was provided`
                 end
             end
         end

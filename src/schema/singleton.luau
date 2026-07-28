@@ -4,7 +4,11 @@ const Base = require("../base")
 const Types = require("../types")
 const Util = require("../util")
 
-export type TSingleton<ConstType> = { value: ConstType, valueType: string } & Base.TSchema & Types.InnerType<ConstType>
+export type TSingleton<ConstType> =
+    { value: ConstType, valueType: string }
+    & Base.TSchema
+    & Types.InnerType<ConstType>
+    & Types.NamedType<"Singleton">
 export type TSingletonOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 type function CheckIsSingleton(ty: type): type

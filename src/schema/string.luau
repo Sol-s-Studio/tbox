@@ -7,6 +7,7 @@ export type TString =
     { maxLength: number?, minLength: number?, vaildUtf8Only: boolean? }
     & Base.TSchema
     & Types.InnerType<string>
+    & Types.NamedType<"String">
 export type TStringOptions = Types.Merge<
     { maxLength: number?, minLength: number?, vaildUtf8Only: boolean? },
     Base.TSchemaOptions
@@ -54,7 +55,7 @@ const function runtimeConstraintChecker(schema: TString, value: string): (() -> 
         const utf8Len = utf8.len(value)
         if utf8Len == nil then
             return function()
-                return `invalid UTF-8 string.`
+                return `invalid UTF-8 string`
             end
         end
     end

@@ -5,9 +5,11 @@ const Types = require("../types")
 const Util = require("../util")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 
-export type TUnion<Tuple> = { components: Tuple } & Base.TSchema & Types.InnerType<
-    Types.TupleTypeToUnion<Types.StaticTuple<Types.GetTupleType<Tuple>>>
->
+export type TUnion<Tuple> =
+    { components: Tuple }
+    & Base.TSchema
+    & Types.InnerType<Types.UnionInner<Types.StaticTuple<Types.GetTupleType<Tuple>>>>
+    & Types.NamedType<"Union">
 -- export type TUnion<Components...> = { components: Types.Tuple<Components...> } & Base.TSchema & Types.InnerType<
 --     TupleTypeToUnion<Types.StaticTuple<Types.TupleType<Components...>>>
 -- >

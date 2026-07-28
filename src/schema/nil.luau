@@ -3,7 +3,7 @@
 const Base = require("../base")
 const Types = require("../types")
 
-export type TNil = {} & Base.TSchema & Types.InnerType<nil>
+export type TNil = {} & Base.TSchema & Types.InnerType<nil> & Types.NamedType<"Nil">
 export type TNilOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Nil(options: TNilOptions?): TNil

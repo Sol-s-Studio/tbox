@@ -3,6 +3,7 @@ const Types = require("@self/types")
 
 const String = require("@self/schema/string")
 const Object = require("@self/schema/json/object")
+const Merge = require("@self/schema/json/merge")
 const Number = require("@self/schema/number")
 const Boolean = require("@self/schema/boolean")
 const Unsafe = require("@self/schema/unsafe")
@@ -24,6 +25,9 @@ export type TString = String.TString
 export type TStringOptions = String.TStringOptions
 export type TObject<Props> = Object.TObject<Props>
 export type TObjectOptions = Object.TObjectOptions
+export type TObjectProps = Object.TObjectProps
+export type TMerge<Tuple> = Merge.TMerge<Tuple>
+export type TMergeOptions = Merge.TMergeOptions
 export type TNumber = Number.TNumber
 export type TNumberOptions = Number.TNumberOptions
 export type TBoolean = Boolean.TBoolean
@@ -54,6 +58,7 @@ const registry = require("@self/registry")
 const defaultNamespace = registry.defaultUntypedNamespace
     :registerType(String)
     :registerType(Object)
+    :registerType(Merge)
     :registerType(Number)
     :registerType(Boolean)
     :registerType(Unsafe)
@@ -67,6 +72,7 @@ const defaultNamespace = registry.defaultUntypedNamespace
     :registerType(Vector) :: registry.TypeNamespace & {
     String: typeof(String.factoryFunc),
     Object: typeof(Object.factoryFunc),
+    Merge: typeof(Merge.factoryFunc),
     Number: typeof(Number.factoryFunc),
     Boolean: typeof(Boolean.factoryFunc),
     Unsafe: typeof(Unsafe.factoryFunc),

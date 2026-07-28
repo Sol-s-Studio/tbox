@@ -10,6 +10,7 @@ export type TArray<InnerSchema> =
     { maxItems: number?, minItems: number?, inner: InnerSchema, fixedLength: number? }
     & Base.TSchema
     & Types.InnerType<{ Types.Static<InnerSchema> }>
+    & Types.NamedType<"Array">
 export type TArrayOptions = Types.Merge<
     { maxItems: number?, minItems: number?, numericIndexOnly: boolean?, fixedLength: number? },
     Base.TSchemaOptions

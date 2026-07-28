@@ -1,6 +1,7 @@
 --!strict
 
 export type InnerType<T> = { __inner: T }
+export type NamedType<T> = { __name: T }
 
 -- Schema 의 __inner: T 를 얻습니다
 export type function Static(target: type): type
@@ -13,6 +14,22 @@ export type function Static(target: type): type
         end
     elseif target:is("table") then
         return target:readproperty(types.singleton("__inner")) or types.never
+    end
+
+    return types.never
+end
+
+-- Schema 의 __name: T 를 얻습니다
+export type function StaticName(target: type): type
+    if target:is("intersection") or target:is("union") then
+        for _, comp in target:components() do
+            const recursive: type = StaticName(comp)
+            if not recursive:is("never") then
+                return recursive
+            end
+        end
+    elseif target:is("table") then
+        return target:readproperty(types.singleton("__name")) or types.never
     end
 
     return types.never
@@ -41,11 +58,20 @@ end
 
 -- ({} & {}) | nil 상황에서 내부 & 조인을 Merge 하지 않으면
 -- 문제가 발생합니다. 따라서 합쳐 문제를 해결합니다.
-export type function MergeInner(fn: type): type
-    const head: { type } = fn:parameters().head or {}
+export type function MergeInner(tupty: type): type
+    if tupty:is("any") then
+        return types.any
+    end
+
+    const head: { type } = tupty:parameters().head or {}
     const tbl = types.newtable()
 
     for _, param in head do
+        if not param:is("table") then
+            print(`{param.tag} cannot be merged`)
+            continue
+        end
+
         for key, prop in param:properties() do
             if prop.read and prop.write and prop.read == prop.write then
                 tbl:setproperty(key, prop.read)
@@ -62,7 +88,18 @@ export type function MergeInner(fn: type): type
 
     return tbl
 end
-export type Merge<T...> = MergeInner<(T...) -> ()>
+export type Merge<T...> = MergeInner<TupleType<T...>>
+
+-- 타입 요소들을 받아 유니온으로 반환합니다
+export type function UnionInner(tupty: type): type
+    if tupty:is("any") then
+        return types.any
+    end
+
+    const head: { type } = tupty:parameters().head or {}
+    return types.unionof(table.unpack(head))
+end
+export type Union<T...> = UnionInner<TupleType<T...>>
 
 -- 함수나 union 등에서 여러 타입을 받기 위한 tuple 구조
 -- 내부에 타입을 TupleType 으로 보존하면서, 받은 런타임 인자를
@@ -88,7 +125,7 @@ end
 -- TupleType<T...> 를 생성합니다
 export type function StaticTuple(tupty: type): type
     if tupty:is("any") then
-        return types.newfunction({ head = { types.any } })
+        return types.any
     end
     const head: { type } = tupty:parameters().head or {}
     const staticHead = table.create(#head) :: { type }
@@ -98,10 +135,18 @@ export type function StaticTuple(tupty: type): type
     return types.newfunction({ head = staticHead })
 end
 
--- 튜플 안 요소를 모아 union 을 생성합니다
-export type function TupleTypeToUnion(tupty: type): type
+-- TupleType 내부 요소를 Schema 라고 가정 후 __name: T 를 얻어 새로운
+-- TupleType<T...> 를 생성합니다
+export type function StaticNameTuple(tupty: type): type
+    if tupty:is("any") then
+        return types.any
+    end
     const head: { type } = tupty:parameters().head or {}
-    return types.unionof(table.unpack(head))
+    const staticHead = table.create(#head) :: { type }
+    for _, innerType in head do
+        table.insert(staticHead, StaticName(innerType) :: type)
+    end
+    return types.newfunction({ head = staticHead })
 end
 
 return { Tuple = Tuple }

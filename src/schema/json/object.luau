@@ -5,10 +5,12 @@ const Types = require("../../types")
 const Util = require("../../util")
 const defaultUntypedNamespace = require("../../registry").defaultUntypedNamespace
 
+export type TObjectProps = { props: { [string]: Base.TSchema }, allowUnknownProps: boolean? }
 export type TObject<Props> =
-    { props: { [string]: Base.TSchema }, allowUnknownProps: boolean? }
+    TObjectProps
     & Base.TSchema
     & Types.InnerType<Types.TObjectPropsFlatten<Props>>
+    & Types.NamedType<"Object">
 export type TObjectOptions = Types.Merge<{
     allowUnknownProps: boolean?,
 }, Base.TSchemaOptions>

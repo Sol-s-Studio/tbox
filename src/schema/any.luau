@@ -3,7 +3,7 @@
 const Base = require("../base")
 const Types = require("../types")
 
-export type TAny = {} & Base.TSchema & Types.InnerType<any>
+export type TAny = {} & Base.TSchema & Types.InnerType<any> & Types.NamedType<"Any">
 export type TAnyOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Any(options: TAnyOptions?): TAny

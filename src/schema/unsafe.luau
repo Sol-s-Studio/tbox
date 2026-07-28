@@ -3,7 +3,11 @@
 const Base = require("../base")
 const Types = require("../types")
 
-export type TUnsafe<T> = { luauType: string, canBeNil: boolean } & Base.TSchema & Types.InnerType<T>
+export type TUnsafe<T> =
+    { luauType: string, canBeNil: boolean }
+    & Base.TSchema
+    & Types.InnerType<T>
+    & Types.NamedType<"Unsafe">
 export type TUnsafeOptions = Types.Merge<{ luauType: string?, canBeNil: boolean? }, Base.TSchemaOptions>
 
 const function Unsafe<T>(options: TUnsafeOptions?): TUnsafe<T>

@@ -11,6 +11,7 @@ export type TMap<KeySchema, ValueSchema> =
     { maxItems: number?, minItems: number?, key: KeySchema, value: ValueSchema }
     & Base.TSchema
     & Types.InnerType<{ [Types.Static<KeySchema>]: Types.Static<ValueSchema> }>
+    & Types.NamedType<"Map">
 export type TMapOptions = Types.Merge<{ maxItems: number?, minItems: number? }, Base.TSchemaOptions>
 
 const function Map<KeySchema, ValueSchema>(key: KeySchema, value: ValueSchema, options: TMapOptions?): TMap<KeySchema, ValueSchema>

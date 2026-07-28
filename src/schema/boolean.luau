@@ -3,7 +3,7 @@
 const Base = require("../base")
 const Types = require("../types")
 
-export type TBoolean = {} & Base.TSchema & Types.InnerType<boolean>
+export type TBoolean = {} & Base.TSchema & Types.InnerType<boolean> & Types.NamedType<"Boolean">
 export type TBooleanOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Boolean(options: TBooleanOptions?): TBoolean

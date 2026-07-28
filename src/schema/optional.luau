@@ -5,7 +5,11 @@ const Types = require("../types")
 const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
 const Util = require("../util")
 
-export type TOptional<InnerSchema> = { inner: InnerSchema } & Base.TSchema & Types.InnerType<Types.Static<InnerSchema>?>
+export type TOptional<InnerSchema> =
+    { inner: InnerSchema }
+    & Base.TSchema
+    & Types.InnerType<Types.Static<InnerSchema>?>
+    & Types.NamedType<"Optional">
 export type TOptionalOptions = Types.Merge<{}, Base.TSchemaOptions>
 
 const function Optional<InnerSchema>(target: InnerSchema, options: TOptionalOptions?): TOptional<InnerSchema>
