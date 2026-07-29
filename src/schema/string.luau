@@ -18,6 +18,7 @@ const function String(options: TStringOptions?): TString
     return Base.SchemaFactory<<TString>>("String", options, {
         maxLength = options.maxLength,
         minLength = options.minLength,
+        vaildUtf8Only = options.vaildUtf8Only,
     })
 end
 

@@ -114,3 +114,27 @@ const check8 = Type:runtimeConstraintCheck(mergedObjectTest, { a = 1, b = 100 })
 print(check8 and check8())
 -- INFO: object property 'b' constraint check failed.
 -- INFO:   number too big. maximum allowed value is 10
+
+-- Roblox 데이터타입
+-- 주의: 이 테스트는 Roblox 전역이 없는 standalone luau 에서 실행되므로 실제
+-- Roblox 값을 만들 수 없습니다. 따라서 타입 빌드와 음성 경로만 확인합니다.
+const robloxTest = Type.Object({
+    position = Type.Vector3({ maxMagnitude = 1000 }),
+    color = Type.Color3({ clampedOnly = true }),
+    size = Type.Optional(Type.UDim2({ scaleOnly = true })),
+    lifetime = Type.NumberRange({ min = 0, disallowEmpty = true }),
+})
+print(Type:luauBuild(robloxTest))
+-- INFO: { color: Color3, lifetime: NumberRange, size: (UDim2)?, position: Vector3 }
+print(Type:format(robloxTest))
+-- INFO: TObject<{ color: TColor3, lifetime: TNumberRange, size: TOptional<TUDim2>, position: TVector3 }>
+
+const check9 = Type:runtimeTypeCheck(Type.CFrame(), 123)
+print(check9 and check9())
+-- INFO: CFrame expected, but got number
+
+-- Instance 와 EnumItem 은 TUnsafe 처럼 정적 타입을 명시적 타입 인자로 받습니다.
+-- 실사용 예: Type.Instance<<BasePart>>("BasePart"), Type.EnumItem<<Enum.Material>>(Enum.Material)
+const partSchema = Type.Instance("BasePart", { nameMatch = "^Part" })
+print(Type:luauBuild(partSchema), Type:format(partSchema))
+-- INFO: BasePart TInstance<BasePart>

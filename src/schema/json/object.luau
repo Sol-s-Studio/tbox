@@ -87,20 +87,19 @@ end
 -- 확장된 TObject 의 경우 상위 TObject 와 공변적(Covariance) 관계를 가지기 때문에
 -- 이 경우도 적합한 타입으로 선택되어야합니다. 따라서 확장 TObject 에 대한 에러 처리는 제약 조건 확인입니다.
 const function runtimeConstraintChecker(schema: TObject<any>, value: any): (() -> string)?
-    if not schema.allowUnknownProps then
-        for key: any, _innerValue in value do
-            const valueSchema = schema.props[key]
-            if not valueSchema then
+    for key: any, innerValue: any in value do
+        const valueSchema = schema.props[key]
+        if not valueSchema then
+            if not schema.allowUnknownProps then
                 return function()
                     -- Property '{key}' is not allowed
                     return `object property '{key}' is not allowed`
                 end
             end
+            -- 허용된 미지의 프로퍼티는 대응하는 스키마가 없으므로 제약 검사 대상이 아닙니다
+            continue
         end
-    end
 
-    for key: any, innerValue: any in value do
-        const valueSchema = schema.props[key]
         const check = defaultUntypedNamespace:runtimeConstraintCheck(valueSchema, innerValue)
         if check then
             return function()

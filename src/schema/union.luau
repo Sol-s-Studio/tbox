@@ -39,7 +39,7 @@ const function formatter(schema: TUnion<any>): string
     const items = table.create(schema.components.n) :: { string }
     for key = 1, schema.components.n do
         const inner = schema.components[key] :: Base.TSchema
-        table.insert(items, defaultUntypedNamespace:luauBuild(inner))
+        table.insert(items, defaultUntypedNamespace:format(inner))
     end
 
     return `TUnion<{table.concat(items, ", ")}>`
