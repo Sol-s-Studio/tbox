@@ -1,2 +1,8 @@
 luau
 .trash
+core.*
+
+# pesde 가 install 시 생성하는 의존성 트리 (pesde.lock 으로 재현 가능하므로 커밋하지 않음)
+roblox_packages/
+luau_packages/
+lune_packages/

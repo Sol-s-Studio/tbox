@@ -1,0 +1,14 @@
+name = "qwreey/tbox"
+version = "0.1.0"
+description = "TypeBox 스타일 Luau 스키마 라이브러리 - 정적 타입, 런타임 타입/제약 검사, 문자열화를 스키마 하나로 제공"
+license = "MIT"
+repository = "https://github.com/Sol-s-Studio/tbox"
+includes = ["pesde.toml", "LICENSE", "README.md", "src/**/*.luau"]
+
+[target]
+environment = "roblox"
+lib = "src/init.luau"
+build_files = ["src"]
+
+[scripts]
+test = "scripts/test.luau"

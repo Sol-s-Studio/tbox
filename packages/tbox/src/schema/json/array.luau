@@ -6,13 +6,14 @@ const Types = require("../../types")
 const Util = require("../../util")
 const defaultUntypedNamespace = require("../../registry").defaultUntypedNamespace
 
-export type TArray<InnerSchema> =
-    { maxItems: number?, minItems: number?, inner: InnerSchema, fixedLength: number? }
-    & Base.TSchema
-    & Types.InnerType<{ Types.Static<InnerSchema> }>
-    & Types.NamedType<"Array">
+export type TArray<InnerSchema> = {
+    maxItems: number?,
+    minItems: number?,
+    inner: InnerSchema,
+    fixedLength: number?,
+} & Base.TSchema & Types.InnerType<{ Types.Static<InnerSchema> }> & Types.NamedType<"Array">
 export type TArrayOptions = Types.Merge<
-    { maxItems: number?, minItems: number?, numericIndexOnly: boolean?, fixedLength: number? },
+    { maxItems: number?, minItems: number?, fixedLength: number? },
     Base.TSchemaOptions
 >
 
@@ -23,7 +24,6 @@ const function Array<InnerSchema>(target: InnerSchema, options: TArrayOptions?):
         inner = target,
         maxItems = options.maxItems,
         minItems = options.minItems,
-        numericIndexOnly = options.numericIndexOnly,
         fixedLength = options.fixedLength,
     })
 end

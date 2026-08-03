@@ -1,0 +1,20 @@
+name = "qwreey/tbox_squish"
+version = "0.0.1"
+description = "tbox 스키마 값을 buffer 로 압축 직렬화/역직렬화하는 라이브러리 (Squash 바인딩)"
+license = "MIT"
+repository = "https://github.com/Sol-s-Studio/tbox"
+includes = ["pesde.toml", "LICENSE", "README.md", "src/**/*.luau"]
+
+[indices]
+default = "https://github.com/pesde-pkg/index"
+
+[target]
+environment = "roblox"
+lib = "src/init.luau"
+build_files = ["src"]
+
+[dependencies]
+tbox = { workspace = "qwreey/tbox", version = "^" }
+
+[dev_dependencies]
+squish = { name = "anexpia/squish", version = "^6.1.1" }

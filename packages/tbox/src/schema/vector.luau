@@ -15,7 +15,12 @@ export type TVectorOptions = Types.Merge<
 
 const function Vector(options: TVectorOptions?): TVector
     options = options or ({} :: TVectorOptions)
-    return Base.SchemaFactory<<TVector>>("Vector", options, {})
+    return Base.SchemaFactory<<TVector>>("Vector", options, {
+        minMagnitude = options.minMagnitude,
+        maxMagnitude = options.maxMagnitude,
+        min = options.min,
+        max = options.max,
+    })
 end
 
 const function luauBuilder(schema: TVector): string

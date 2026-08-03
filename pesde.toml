@@ -1,0 +1,7 @@
+name = "qwreey/tbox_workspace"
+version = "0.0.0"
+private = true
+workspace_members = ["packages/*"]
+
+[target]
+environment = "luau"

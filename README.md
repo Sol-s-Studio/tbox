@@ -1,43 +1,36 @@
-tbox 는 시리얼라이징이나 디시리얼라이징에 아무 영향을 미치지 않는
+# tbox (workspace)
 
+TBox 는 Roblox 엔진 언어인 Luau 용 스키마 라이브러리입니다. TypeScript 생태계의
+[TypeBox](https://github.com/sinclairzx81/typebox) 처럼, 스키마 객체 하나로 정적 타입 / 런타임 타입 검사 /
+런타임 제약 검사 / 문자열화를 모두 얻습니다. 시리얼라이저는 아닙니다 — 값을 바꾸거나 채우지 않으며
+입력과 출력 타입이 항상 같습니다.
 
-모든 스키마는 defaultUntypedNamespace 에 기본적으로 등록되어야합니다
+이 저장소는 [pesde](https://pesde.dev) 워크스페이스로 구성된 모노레포입니다. 핵심 스키마 기능은 최대한
+가볍게 유지하고, 직렬화/압축/네트워킹 같은 기능은 별도 패키지로 분리해 필요한 것만 골라 쓸 수 있게 합니다.
 
-## Code styles
+## 패키지
 
-### 왜 타입 명에 TString 과 같이 T 를 접두사로 사용하나요?
+| 패키지 | pesde 이름 | 상태 | 설명 |
+| --- | --- | --- | --- |
+| [`packages/tbox`](packages/tbox) | `qwreey/tbox` | 구현 완료 | 핵심 스키마 라이브러리 |
+| [`packages/tbox_squish`](packages/tbox_squish) | `qwreey/tbox_squish` | 스캐폴드 | tbox 스키마 값을 buffer 로 압축 직렬화 (Squash 바인딩) |
+| [`packages/tbox_remote`](packages/tbox_remote) | `qwreey/tbox_remote` | 스캐폴드 | tbox 스키마로 RemoteEvent/RemoteFunction 페이로드 검증 |
 
-이 라이브러리는 타입에 관한 라이브러리로써, 데이터 컨테이너 또는 타입클래스와는 연관이 없습니다. 허나 `Array`, `String` 과 같이 타입을 작명하게 될 경우, 일부 사용자 정의 함수 시그니처로써 이것이 타입에 관한 것인지 알 수 없게 됩니다. 따라서 모호함을 해결하고자 `TArray`, `TString` 과 같은 작명을 사용합니다.
+각 패키지의 자세한 사용법과 설계는 해당 디렉터리의 `README.md` 를 보세요.
 
-### 일부 함수 명은 왜 파스칼 케이스입니까?
+## 설치
 
-팩토리 함수와 생성자 함수에 대해서 파스칼 케이스를 사용합니다.
-
-## Why x is not exist?
-
-### Default 없는 이유?
-
-따로 시리얼라이저를 강제하는 라이브러리가 아니기 때문에 input 타입과 output 타입이 달라질 수 없습니다. 따라서 `TDefault<TString>` 이 있다면 input 은 `string?` 의 루아 타입을 가지지만, output 은 `string` 의 타입을 가져 문제가 발생합니다. 또한 Default 내의 값은 항상 복사되지 않으면 부작용이 발생하는 등 많은 문제가 있으므로, default 는 구현하지 않습니다.
-
-### Never 없는 이유?
-
-말 그대로, 타입체킹이 불가능한 타입이므로 존재하지 않습니다. never 는 어떤 타입에 대해서도 타입체킹에 실패합니다. 런타임에서 never 타입을 만족하는 nil을 포함한 어떠한 값도 존재하지 않으므로 항상 타입체킹에 실패합니다. 이는 의도된 동작이 아니므로 구현되지 않습니다.
-
-```typescript
-const test: never = 1
+```bash
+pesde install
 ```
 
-### Intersect 없는 이유?
+저장소 루트에서 실행하면 워크스페이스 내 모든 패키지의 의존성이 한 번에 해석/링크됩니다.
 
-루아우의 교집합은 heterogeneous 한 primitive 에 또한 수행될 수 있으며 이는 의도되지 않은 문제를 발생시킵니다. Typescript 의 경우
+## 개발
 
-```typescript
-type a = number & string
-// A is never
+```bash
+luau packages/tbox/test.luau   # 스모크 테스트 겸 사용 예제
+stylua packages                # 포매팅
 ```
 
-와 같이 존재 불가 타입을 처리하지만, luau 의 교집합은 처리 불가 타입에 대해 있는 그대로 Intersect 를 반환합니다.
-
-이는 실제로 never 와 같으며 존재할 수 없는 타입이므로 TBox 에선 존재해선 안됩니다. 따라서 해당 문제를 해결하기 위해 오직 `TObject` 에 대해서만 합집합 생성을 가능케 합니다. `TMerge` 를 확인하세요.
-
-<!-- 부분집합 Partial 필요 -->
+기여 시 지켜야 할 규칙은 [`CLAUDE.md`](CLAUDE.md) 와 각 패키지의 `CLAUDE.md` 를 참고하세요.

@@ -1,0 +1,14 @@
+name = "qwreey/tbox_remote"
+version = "0.0.1"
+description = "tbox 스키마로 RemoteEvent/RemoteFunction 페이로드를 검증하는 라이브러리"
+license = "MIT"
+repository = "https://github.com/Sol-s-Studio/tbox"
+includes = ["pesde.toml", "LICENSE", "README.md", "src/**/*.luau"]
+
+[target]
+environment = "roblox"
+lib = "src/init.luau"
+build_files = ["src"]
+
+[dependencies]
+tbox = { workspace = "qwreey/tbox", version = "^" }

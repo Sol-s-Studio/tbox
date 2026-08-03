@@ -1,226 +1,176 @@
 # CLAUDE.md
 
-TBox 저장소에서 작업하는 에이전트를 위한 안내입니다.
+TBox 저장소(모노레포)에서 작업하는 에이전트를 위한 안내입니다.
+패키지별 세부 아키텍처는 각 패키지 디렉터리의 `CLAUDE.md` 를 보세요 — 예:
+`packages/tbox/CLAUDE.md`. 이 문서는 워크스페이스 전체에 적용되는 내용만 다룹니다.
 
 ## 프로젝트 개요
 
-TBox 는 Roblox 엔진 언어인 **Luau** 용 스키마 라이브러리로, TypeScript 생태계의
-[TypeBox](https://github.com/sinclairzx81/typebox) 와 같은 역할을 합니다. 스키마 객체 하나로 네 가지를 얻습니다.
+TBox 는 Roblox 엔진 언어인 **Luau** 용 스키마 라이브러리입니다. 핵심 원칙은 라이브러리를 가볍게
+유지하는 것입니다 — 스키마 정의, 런타임 타입/제약 검사, 타입 문자열화(`luauBuild`/`format`)만 제공하고,
+직렬화나 압축, 네트워킹 같은 나머지는 별도 패키지로 분리합니다. Luau 의 `require` 는 모듈 전체를
+불러오는 구조라 "타입만 가져오고 런타임 구현은 선택적으로 연동" 하는 것이 어렵기 때문에, 하나의 거대한
+패키지 대신 **pesde 워크스페이스(모노레포)** 로 여러 개의 작은 패키지를 두는 구조를 택했습니다.
 
-1. **정적 Luau 타입** — `Type.Static<typeof(schema)>` 로 컴파일 타임 타입을 추출
-2. **런타임 타입 검사** — `Type:runtimeTypeCheck(schema, value)`
-3. **런타임 제약 검사** — `Type:runtimeConstraintCheck(schema, value)` (min/max/length 등)
-4. **문자열화** — `Type:luauBuild(schema)` (Luau 타입 소스), `Type:format(schema)` (사람이 읽는 형태)
+## 워크스페이스 구조
 
-TBox 는 **시리얼라이저가 아닙니다.** 값을 변환하거나 기본값을 채우지 않으며, 입력 타입과 출력 타입이
-항상 동일합니다. (`README.md` 의 "Why x is not exist?" 참고 — 그래서 `Default`, `Never`, `Intersect` 가 없습니다.)
+```
+pesde.toml              워크스페이스 루트 매니페스트 (private = true, workspace_members = ["packages/*"])
+packages/
+  tbox/                 qwreey/tbox         — 핵심 스키마 라이브러리 (구현 완료)
+  tbox_squish/          qwreey/tbox_squish  — buffer 압축 직렬화 (Squash 바인딩, compile() 구현 진행 중)
+  tbox_remote/          qwreey/tbox_remote  — RemoteEvent/RemoteFunction 페이로드 검증 (스캐폴드만 존재)
+```
+
+각 패키지는 독립된 `pesde.toml`, `src/`, `test/`, `default.project.json` 을 가지는
+**하나의 pesde 패키지**입니다. `tbox_squish`, `tbox_remote` 는 `tbox` 를 워크스페이스 의존성으로 참조합니다.
+
+```toml
+# packages/tbox_squish/pesde.toml 발췌
+[dependencies]
+tbox = { workspace = "qwreey/tbox", version = "^" }
+```
+
+새 패키지를 추가할 땐 `packages/<name>/` 아래에 `pesde.toml` (`name = "qwreey/<name>"`,
+`[target] environment = "roblox", lib = "src/init.luau", build_files = ["src"]`) 을 만들고
+루트에서 `pesde install` 을 실행해 워크스페이스에 편입시키세요. 패키지 이름의 `<name>` 부분은
+pesde 규칙상 **소문자, 숫자, `_` 만 허용**됩니다 (하이픈 불가) — 디렉터리명도 이에 맞춥니다.
+
+## pesde 사용법
+
+```bash
+pesde install     # 저장소 루트에서. 워크스페이스 전체(모든 packages/*)의 의존성을 한 번에 해석/링크
+```
+
+- `pesde.lock` (루트 + 각 패키지)은 커밋합니다. 재현 가능한 설치를 위한 잠금 파일입니다.
+- `roblox_packages/`, `luau_packages/`, `lune_packages/` 는 `pesde install` 이 생성하는 설치 결과물이며
+  `.gitignore` 에 등록되어 있습니다. 커밋하지 마세요.
+- **scope 는 `qwreey`** 로 통일합니다 (개인 계정 기준, 아직 실제 registry 에 publish 하지 않았습니다).
+  회사(Sol-s-Studio) 스코프가 필요해지면 별도 스코프로 동시 배포하는 방식을 고려 중이며, 지금 임의로
+  스코프를 바꾸거나 추가하지 마세요.
+- **알려진 pesde 이슈**: `pesde install` 시 각 패키지에서 "failed to parse file to extract types" 라는
+  긴 ERROR 로그가 출력됩니다. 이는 pesde 의 부가적인 타입 스텁 추출기가 이 저장소 전역에서 쓰는
+  `const` 지역 선언 문법(코드 스타일 참고)을 아직 파싱하지 못해서입니다. **설치 자체는 정상 동작**하며
+  (`roblox_packages/<pkg>.luau` 는 실제 소스로의 require 를 그대로 링크합니다), 이 에러는 무시해도
+  됩니다. `const` 를 `local` 로 바꿔서 이 경고를 없애려 하지 마세요 — 코드 스타일 위반입니다.
+- **알려진 이슈: 로컬 크로스 패키지 테스트가 막혀 있습니다.** `tbox_squish`, `tbox_remote` 처럼 다른
+  워크스페이스 패키지를 실제 require 하는 코드는 지금 이 환경에서 `luau` 로도 `lune` 으로도
+  실행/테스트할 수 없습니다 (pesde 가 워크스페이스 의존성을 심볼릭 링크로 연결하는데, `luau` CLI 는
+  심볼릭 링크를 못 따라가고, `lune` 0.8.9 는 `const` 문법을 못 읽습니다). 의도적으로 보류된 상태이니
+  이 상태를 "고치려고" 코드 스타일을 바꾸지 마세요. 자세한 내용과 재현 방법은
+  `packages/tbox_squish/CLAUDE.md` 의 "알려진 이슈" 절을 보세요.
+
+## 코드 스타일 (모든 패키지 공통)
+
+- **`const` 지역 선언**을 기본으로 씁니다. 재할당이 필요할 때만 `local` 을 씁니다.
+- **명시적 타입 인자 호출** `f<<T>>(...)` 문법을 씁니다. new solver 의 추론 부작용을 피하기 위한
+  의도적인 선택입니다.
+- 팩토리 / 생성자 함수는 파스칼 케이스, 그 외 함수는 카멜 케이스입니다.
+- **주석은 한국어로 작성합니다.** 기존 파일의 밀도와 톤을 따르세요 (왜 그렇게 했는지를 적는 편).
+- 에러 메시지 문자열은 영어, 소문자로 시작합니다. 예: `` `number too big. maximum allowed value is {schema.max}` ``
+- `stylua.toml` 은 루트에 하나만 두고 전체 패키지에 재귀 적용합니다: `stylua packages`.
+- `.vscode/settings.json` (luau-lsp new solver 설정) 도 루트에서 워크스페이스 전체에 적용됩니다.
+- **위험: 이 환경의 stylua(2.5.2, `syntax = "Luau"`)는 `f<<T>>(...)` 명시적 타입 인자 호출 문법을
+  모릅니다.** `<<`/`>>` 를 시프트 연산자로 오해해서, 뒤따르는 나머지 토큰이 우연히도 시프트 식으로
+  파싱 가능하면 **에러 없이 조용히** `f<<T>>(...)` 를 `f << T >> (...)` 로 잘못 재작성해버립니다
+  (예: `Type.Unsafe<<number>>({...})` → `Type.Unsafe << number >> {...}`, 의미가 완전히 깨짐).
+  파싱이 안 되는 경우에만(예: 인자가 여러 개인 함수 호출) 정상적으로 파싱 에러를 냅니다. 즉 **exit
+  code 0 도 안전을 보장하지 않습니다.** `f<<T>>` 를 쓰는 파일(현재 `src/` 전역, `test/schema/unsafe.luau`
+  등)에 stylua 를 돌린 뒤에는 diff 를 직접 확인해서 `<<`/`>>` 가 시프트 연산자로 바뀌지 않았는지
+  확인하세요. 이 문제 자체를 "고치려고" 코드 스타일(`f<<T>>` 문법)을 바꾸지 마세요.
+
+패키지별 타입 네이밍 규칙(`T` 접두사 등)이나 아키텍처는 해당 패키지의 `CLAUDE.md` 를 보세요.
+
+### require 경로 규칙 — `init.luau` 는 "자기가 들어있는 폴더" 입니다
+
+Luau 의 require-by-string 은 `init.luau` 를 **그 파일이 들어있는 디렉터리 그 자체**로 취급합니다.
+그래서 `init.luau` 안에서의 상대 경로는 다른 파일과 기준이 다릅니다. `packages/<pkg>/src/init.luau`
+기준으로:
+
+| 표기 | 가리키는 곳 |
+| --- | --- |
+| `@self/types` | `packages/<pkg>/src/types.luau` (init.luau 의 **형제**, 즉 자기 아래 요소) |
+| `./roblox_packages/tbox` | `packages/<pkg>/roblox_packages/tbox.luau` (init.luau 가 든 폴더의 **형제**) |
+| `../foo` | `packages/foo` — 패키지 바깥. **거의 항상 버그입니다.** |
+
+- **워크스페이스/pesde 의존성은 항상 `require("./roblox_packages/<name>")` 로 씁니다.**
+  `require("../roblox_packages/<name>")` 는 `packages/roblox_packages/...` 를 찾게 되어 실패합니다
+  (실제로 `packages/tbox_squish/src/init.luau` 가 이 실수로 깨져 있었습니다).
+- **자기 패키지 내부 모듈은 `@self/...`** 로 씁니다 (`packages/tbox/src/init.luau` 가 올바른 예시).
+- `init.luau` **가 아닌** 파일(`src/schema/*.luau`, `test/*.luau` 등)은 평범한 "파일이 있는 디렉터리
+  기준" 상대 경로입니다. 즉 `src/schema/number.luau` 의 `require("../base")` 는 맞는 코드이니
+  일괄 치환하지 마세요. 이 규칙은 **오직 `init.luau` 에만** 특별하게 적용됩니다.
+- 워크스페이스 간 require 는 심볼릭 링크 문제로 로컬에서 실행 검증이 불가능합니다
+  (`packages/tbox_squish/CLAUDE.md` 의 "알려진 이슈" 절). 즉 경로가 틀려도 실행 중에 안 걸리므로
+  **눈으로 검토해야 합니다.** 규칙 자체를 확인하고 싶으면 스크래치 디렉터리에 `pkg/src/init.luau` +
+  `pkg/roblox_packages/x.luau` 를 만들어 `luau` 로 직접 돌려보면 즉시 재현됩니다.
 
 ## 실행 / 검증
 
+정식 테스트 프레임워크는 없습니다. 각 패키지의 `test/` 디렉터리(`test/run.luau` 진입점 +
+`test/schema/*.luau` 가 `src/schema/*` 를 1:1로 미러링)가 실행 가능한 문서 겸 스모크 테스트입니다.
+실패하면 어서션이 그냥 `error()` 로 중단시킵니다 (`packages/tbox/test/helper.luau` 의
+`expectOk`/`expectFail`/`expectEqual` 참고) — 별도 테스트 프레임워크를 억지로 두지 않았습니다.
+
 ```bash
-luau test.luau      # 저장소 루트에서. 스모크 테스트 겸 사용 예제. 실행 결과가 주석과 일치해야 함
-stylua src test.luau  # 포매팅 (stylua.toml: Luau 문법, 120컬럼, 스페이스 4칸)
+pesde run test                              # 저장소 루트 또는 각 패키지 디렉터리에서
+luau packages/tbox/test/run.luau            # 또는 cd packages/tbox && luau test/run.luau
 ```
 
-- 정식 테스트 프레임워크는 없습니다. `test.luau` 가 실행 가능한 문서 역할을 하며,
-  각 `print` 아래에 `-- INFO:` 주석으로 기대 출력이 적혀 있습니다. **기능을 추가하면 여기에 예제를 추가하세요.**
-- `default.project.json` 은 Rojo 프로젝트로 `src` 를 `ReplicatedStorage.TBox` 에 매핑합니다.
-- 정적 분석은 luau-lsp(new solver) 기준입니다 (`.vscode/settings.json`).
+- `pesde run` 은 스크립트를 항상 Lune 으로 실행하는데, Lune 0.8.9 는 이 저장소 전역의 `const`
+  문법을 파싱하지 못합니다. 그래서 각 패키지의 `pesde.toml` 은 `[scripts] test = "scripts/test.luau"`
+  로 **Lune 호환(= `const` 미사용) 브릿지 스크립트**를 가리키고, 그 브릿지가
+  `process.exec("luau", { "test/run.luau" }, ...)` 로 실제 테스트를 서브프로세스에 위임합니다.
+  `scripts/test.luau` 자체를 고칠 때는 이 파일만은 `const` 를 쓰지 않아야 한다는 것을 기억하세요.
+- **테스트 엔트리 파일을 `init.luau` 로 이름 짓지 마세요.** 이 저장소의 `luau` 빌드는 `init.luau` 를
+  디렉터리 인덱스 모듈로 특별 취급하는데, 엔트리 파일도 `init.luau` 라면 그 파일이 재귀적으로 require
+  하는 `src/init.luau` 와 이름이 겹쳐 `could not reset to requiring context (ambiguous)` 같은 오류를
+  일으킵니다. `test/run.luau` 처럼 다른 이름을 쓰세요.
+- 패키지를 추가/수정하면 `test/schema/` 아래에 대응 파일을 추가/갱신하고 `test/run.luau` 의
+  require 목록에도 반영하세요. require 대상은 항상 문자열 리터럴로 적습니다 (동적 경로도 같은
+  "ambiguous" 오류를 유발할 수 있습니다).
 
 ### 중요: 실행 환경은 Roblox 가 아닙니다
 
-`luau` CLI 에는 `Vector3`, `CFrame`, `Color3` 등 Roblox 전역이 **존재하지 않습니다.**
-따라서 `src/schema/roblox/*` 모듈은 로드 시점에 Roblox 전역을 절대 참조하면 안 되고,
-런타임 판별은 오직 `typeof(value) == "Vector3"` 같은 문자열 비교로만 해야 합니다.
-자세한 내용과 데이터타입별 API 는 **`RobloxApi.md`** 를 보세요.
+`luau` CLI 에는 `Vector3`, `CFrame`, `Color3` 등 Roblox 전역이 **존재하지 않습니다.** Roblox 데이터타입을
+다루는 모듈은 로드 시점에 Roblox 전역을 절대 참조하면 안 되고, 런타임 판별은 오직
+`typeof(value) == "Vector3"` 같은 문자열 비교로만 해야 합니다. 자세한 내용은
+`packages/tbox/RobloxApi.md`, `packages/tbox/CLAUDE.md` 를 보세요.
 
-## 코드 스타일
+## 저장소 상태에 대한 참고
 
-- **`const` 지역 선언**을 기본으로 씁니다. 재할당이 필요할 때만 `local` 을 씁니다.
-- **명시적 타입 인자 호출** `f<<T>>(...)` 문법을 씁니다. 예: `Base.SchemaFactory<<TNumber>>(...)`.
-  new solver 의 추론 부작용을 피하기 위한 의도적인 선택입니다.
-- 타입 이름은 `T` 접두사(`TString`, `TArray`)를 씁니다. 데이터 컨테이너가 아니라 "타입에 관한 것"임을
-  시그니처에서 구분하기 위함입니다.
-- 팩토리 / 생성자 함수는 파스칼 케이스(`String`, `Object`), 그 외 함수는 카멜 케이스입니다.
-- **주석은 한국어로 작성합니다.** 기존 파일의 밀도와 톤을 따르세요 (왜 그렇게 했는지를 적는 편).
-- 에러 메시지 문자열은 영어, 소문자로 시작합니다. 예: `` `number too big. maximum allowed value is {schema.max}` ``
+- git remote 는 현재 `Sol-s-Studio/tbox` (조직 레포) 입니다. 추후 개인 계정으로 옮겨 개발하고,
+  조직 레포는 안정화된 변경만 반영하는 방식으로 분리할 계획입니다 — `pesde.toml` 의 `repository` 필드나
+  git remote 를 임의로 바꾸지 마세요.
+- 라이선스는 MIT 입니다. 루트와 각 패키지 디렉터리에 `LICENSE` 파일이 있고, 각 패키지 `pesde.toml` 에
+  `license = "MIT"` 가 설정되어 있습니다.
 
-## 아키텍처
+### 인수인계 메모 (단일 플랫 패키지 → pesde 모노레포 전환)
 
-```
-src/
-  init.luau      기본 네임스페이스 구성 + 공개 타입 재수출 (진입점)
-  base.luau      TSchema / TypeDef 정의, SchemaFactory / TypeDefFactory
-  registry.luau  TypeNamespace — tag → TypeDef 디스패치
-  types.luau     타입 함수(type function) 유틸: Static, Merge, Union, Tuple ...
-  util.luau      식별자 검사, 문자열 이스케이프, 들여쓰기
-  collect.luau   미사용 (아이디어 메모만 있음)
-  schema/        각 타입 정의 1파일 = 1타입
-    json/        JSON 표현이 가능한 컨테이너 타입 (object, array, merge)
-    roblox/      Roblox 데이터타입 — 현재 전부 빈 파일 (구현 대상)
-```
+원래 플랫 구조(저장소 루트에 `src/`, `test.luau` 등)였던 이 저장소를 지금의 `packages/tbox`,
+`packages/tbox_squish`, `packages/tbox_remote` 워크스페이스 구조로 옮기고, `tbox_squish` 의
+`compile()` 을 실제로 구현하는 작업을 막 마친 상태입니다.
 
-### 스키마 값과 TypeDef
-
-스키마 **인스턴스**는 평범한 테이블입니다: `{ tag, id?, title?, description?, ...타입별 필드 }`.
-`tag` 가 디스패치 키입니다.
-
-각 `src/schema/*.luau` 모듈은 `Base.TypeDefFactory(typeName, factoryFunc, hooks)` 의 결과를 반환합니다.
-훅은 여섯 가지입니다 (`src/base.luau`):
-
-| 훅 | 필수 | 역할 |
-| --- | --- | --- |
-| `runtimeTypeChecker(schema, value)` | O | 런타임 타입이 맞는가. 실패 시 **에러 메시지를 만드는 함수**를 반환, 성공 시 `nil` |
-| `runtimeConstraintChecker(schema, value)` | X | min/max/length 등 제약. **타입 검사를 이미 통과했다고 가정** |
-| `luauBuilder(schema)` | O | 실제 Luau 타입 소스 문자열 (`"number"`, `"{ a: string }"`) |
-| `formatter(schema)` | O | 디버깅용 표현 (`"TNumber"`, `"TArray<TString>"`) |
-| `canBeNil(schema)` | X | nil 을 허용하는가. `TObject` 가 필수 필드 여부를 판단할 때 사용 |
-| `inspectInner(schema)` | X | 내부 스키마 목록. 문서/타입 수집 용도 |
-
-**타입 검사와 제약 검사를 나눈 이유**가 이 설계의 핵심입니다. `TUnion` 은 분기를 고를 때
-`runtimeTypeChecker` 만 사용합니다 — 제약 조건까지 섞으면 "길이가 안 맞아서 다른 분기가 선택되는"
-Luau 타입과 어긋난 동작이 생기기 때문입니다. 그래서 제약 검사는 타입이 확정된 뒤에만 돕니다.
-
-에러를 문자열이 아니라 **클로저**로 반환하는 것도 의도적입니다. `TUnion` 처럼 실패가 정상 흐름인
-곳에서 문자열 포매팅 비용을 내지 않기 위함입니다. 실제로 필요할 때만 호출하세요.
-
-### 네임스페이스 (registry.luau)
-
-`TypeNamespace` 는 `tag → TypeDef` 맵이자 디스패치 지점입니다. 모든 훅은 네임스페이스 메서드로 감싸져 있고
-(`ns:runtimeTypeCheck`, `ns:luauBuild`, ...), 컨테이너 타입은 내부 스키마를 처리할 때 이 메서드를 다시 호출합니다.
-
-컨테이너 스키마 모듈들은 `require("../registry").defaultUntypedNamespace` 를 직접 import 해서 재귀합니다.
-즉 **재귀 호출은 항상 기본 네임스페이스로 고정**되며, `clone()` 으로 만든 커스텀 네임스페이스는
-최상위 호출에만 영향을 줍니다. (알려진 한계입니다. 고칠 거면 훅 시그니처에 네임스페이스를 넘기는 리팩터가 필요합니다.)
-
-`README.md` 규칙: **모든 스키마는 `defaultUntypedNamespace` 에 기본 등록되어야 합니다.**
-
-### 타입 레벨 (types.luau)
-
-정적 타입 추출은 스키마 타입에 붙은 팬텀 필드로 동작합니다.
-
-- `Types.InnerType<T>` = `{ __inner: T }` — `Static<S>` 가 여기서 실제 Luau 타입을 꺼냅니다.
-- `Types.NamedType<"Object">` = `{ __name: "Object" }` — 타입 함수가 스키마 종류를 판별할 때 씁니다
-  (`TMerge` 가 병합 대상이 Object/Merge 인지 컴파일 타임에 검사).
-- `Types.Merge<A, B>` — 옵션 테이블 타입 합성용. Luau 교집합(`&`)이 `?` 와 섞이면 깨지는 문제를 우회합니다.
-- `Types.Tuple<T...>` / `Types.TupleType<T...>` — 가변 스키마 인자를 받는 통로.
-  `TUnion`, `TMerge` 는 `Components...` 대신 `Tuple` 을 받습니다. new solver 가 pack 을 추론하면
-  뒤따르는 인자(`options`)까지 오염되기 때문입니다. 그래서 사용부가 `Type.Union(Type.Tuple(a, b), opts)` 형태입니다.
-- `GetTupleType`, `StaticTuple`, `StaticNameTuple`, `UnionInner`, `MergeInner`, `TObjectPropsFlatten`
-  은 위 구조를 다루는 보조 타입 함수입니다.
-
-## 새 스키마 타입 추가하기
-
-`src/schema/<name>.luau` 를 만들고 아래 골격을 따릅니다 (`src/schema/number.luau` 가 가장 좋은 참고 대상,
-컨테이너라면 `src/schema/json/array.luau`).
-
-```luau
---!strict
-
-const Base = require("../base")
-const Types = require("../types")
--- 내부 스키마를 재귀 처리한다면:
--- const Util = require("../util")
--- const defaultUntypedNamespace = require("../registry").defaultUntypedNamespace
-
-export type TFoo =
-    { someOption: number? }
-    & Base.TSchema
-    & Types.InnerType<Foo>          -- 이 스키마가 표현하는 실제 Luau 타입
-    & Types.NamedType<"Foo">        -- TypeDefFactory 의 typeName 과 반드시 동일
-export type TFooOptions = Types.Merge<{ someOption: number? }, Base.TSchemaOptions>
-
-const function Foo(options: TFooOptions?): TFoo
-    options = options or ({} :: TFooOptions)
-    return Base.SchemaFactory<<TFoo>>("Foo", options, {
-        someOption = options.someOption,
-    })
-end
-
-const function luauBuilder(_schema: TFoo): string
-    return "Foo"
-end
-
-const function formatter(_schema: TFoo): string
-    return "TFoo"
-end
-
-const function runtimeTypeChecker(_schema: TFoo, value: any): (() -> string)?
-    const ty = typeof(value)
-    if ty ~= "Foo" then
-        return function()
-            return `Foo expected, but got {ty}`
-        end
-    end
-    return nil
-end
-
-const function runtimeConstraintChecker(schema: TFoo, value: Foo): (() -> string)?
-    -- value 는 이미 타입 검사를 통과했다고 가정한다
-    return nil
-end
-
-return Base.TypeDefFactory("Foo", Foo, {
-    runtimeTypeChecker = runtimeTypeChecker,
-    runtimeConstraintChecker = runtimeConstraintChecker,
-    luauBuilder = luauBuilder,
-    formatter = formatter,
-})
-```
-
-주의: `SchemaFactory` 의 첫 인자(tag), `TypeDefFactory` 의 첫 인자(typeName), `NamedType<...>` 의 문자열
-**세 개가 전부 같아야 합니다.** 하나라도 어긋나면 런타임에
-`Type schema 'X' does not exist in this type namespace` 로 터집니다.
-
-그다음 `src/init.luau` 의 **네 곳**을 모두 수정합니다.
-
-1. `const Foo = require("@self/schema/foo")`
-2. `export type TFoo = Foo.TFoo` / `export type TFooOptions = Foo.TFooOptions`
-3. `:registerType(Foo)` 를 체인에 추가
-4. 체인 뒤 교집합 타입 어노테이션에 `Foo: typeof(Foo.factoryFunc),` 추가
-   — 이걸 빠뜨리면 런타임엔 동작하지만 `Type.Foo` 가 타입 에러가 납니다.
-
-마지막으로 `test.luau` 에 사용 예제와 기대 출력 주석을 추가하고 `luau test.luau` 로 확인합니다.
-
-## 현재 상태 / 작업 대상
-
-### `src/schema/roblox/` — 17개 타입 구현 완료
-
-`Vector2`, `Vector3`, `CFrame`, `Color3`, `ColorSequence`, `ColorSequenceKeypoint`, `NumberRange`,
-`NumberSequence`, `NumberSequenceKeypoint`, `Rect`, `Region3`, `UDim`, `UDim2`, `DateTime`,
-`Instance`, `Enum`, `EnumItem` 이 모두 `defaultUntypedNamespace` 에 등록되어 있습니다.
-
-Roblox 타입을 다룰 때 알아야 할 것:
-
-- 데이터타입별 생성자/프로퍼티/제약과 아직 없는 타입 목록은 **`RobloxApi.md`** 에 있습니다.
-- `luau` CLI 에는 Roblox 전역이 없습니다. **모듈 어디에서도 `Color3.new(...)` 같은 전역 참조를 하지 마세요.**
-  검사 대상 `value` 의 프로퍼티/메서드와 사용자가 옵션으로 넘긴 값만 쓸 수 있습니다.
-- 그래서 `test.luau` 에서는 Roblox 값을 만들 수 없습니다. 새 Roblox 타입을 추가하면 타입 빌드
-  (`luauBuild`/`format`)와 음성 경로(`runtimeTypeCheck(schema, 123)`)만 테스트에 넣으세요.
-  제약 검사기를 확인하려면 `require("./src/schema/roblox/<name>")` 로 모듈을 직접 가져와
-  `Def.runtimeConstraintChecker(schema, mock)` 에 프로퍼티 모양만 흉내낸 테이블을 넘기면 됩니다.
-- `src/schema/vector.luau` (네이티브 `vector`, `typeof == "vector"`) 와 `roblox/vector3.luau`
-  (Roblox `Vector3`, `typeof == "Vector3"`) 는 별개 타입입니다.
-- `Instance` 와 `EnumItem` 은 `TUnsafe<T>` 처럼 정적 타입을 명시적 타입 인자로 받습니다:
-  `Type.Instance<<BasePart>>("BasePart")`, `Type.EnumItem<<Enum.Material>>(Enum.Material)`.
-  런타임 판별에 필요한 정보(클래스명, Enum 객체)는 별도로 첫 인자로 넘깁니다.
-- `Instance` 의 클래스 판별(`IsA`/`ClassName`)과 `EnumItem` 의 `EnumType` 판별은 **타입 검사**에 있습니다.
-  유니온 분기 선택에 쓰여야 하기 때문입니다. `nameMatch`, `requiredChildren`, `allowedItems` 는 제약 검사입니다.
-- 시퀀스 타입의 `strictKeypointOrder` 는 기본 꺼짐입니다. 엔진이 생성 시점에 이미 강제하는 규칙이라
-  명시적으로 켰을 때만 검사합니다.
-
-### 알려진 이슈
-
-- `src/schema/json/array.luau` 의 `numericIndexOnly` 옵션이 `TArrayOptions` 에만 있고 `TArray` 타입엔 없습니다.
-- `TSchema.id` 필드는 정의만 되어 있고 아무도 사용하지 않습니다 (`$ref` 유사 기능 미구현).
-- `src/collect.luau` 는 아이디어 메모뿐인 빈 모듈입니다.
-
-남은 계획은 `TODO.md` 에 있습니다.
+- **현재 모든 변경은 `git add` 로 스테이징만 되어 있고 커밋되지 않았습니다** (사용자가 명시적으로
+  요청하기 전까지 커밋하지 않는다는 표준 방침 때문입니다). `git status` 로 확인하면 대부분 `A`/`R`
+  (모노레포 이동으로 인한 rename 포함)이고, `packages/tbox/src/schema/json/array.luau` 는 사용자가
+  이 세션 시작 전부터 갖고 있던 별개의 우선 작업(`numericIndexOnly` 옵션 제거)이 이동 과정에 실려
+  함께 스테이징돼 있습니다 — 이건 건드리지 마세요.
+- `packages/tbox_squish/src/init.luau` 의 `compile()` 은 `Number`/`String`/`Boolean`/`Singleton`/
+  `Optional`/`Array`/`Object`/`Merge`/`Union`/`Map` 을 지원하는 실제 구현입니다. `Any`/`Nil`/`Unsafe`/
+  `Vector`/Roblox 데이터타입은 아직 미지원(TODO, compile 시점 error). 설계 근거와 최근 리팩터
+  (컨테이너는 주입된 `record`/`array`/`map`/`optional` 합성 빌더에 위임, `Union` 만 태그+payload 직접
+  처리, `Squish.variant` 를 쓸 수 없는 이유)는 `packages/tbox_squish/CLAUDE.md` 를 보세요.
+- `packages/tbox_remote` 는 여전히 스캐폴드만 있고 구현은 없습니다 (다음 후보 작업).
+- 로컬에서 워크스페이스 간 실제 `require` 를 실행하는 표준 방법이 없다는 문제(위 "알려진 이슈"
+  참고)는 아직 해결되지 않았습니다. `tbox_squish` 의 `compile()` 은 이 문제를 우회하는 임시
+  스크립트(커밋 안 함, `packages/tbox_squish/CLAUDE.md` "알려진 이슈" 절에 재현 방법 있음)로만
+  검증했습니다.
 
 ## 하지 말 것
 
-- `Default`, `Never`, `Intersect` 타입을 추가하지 마세요. 의도적으로 제외된 것이며 이유는 `README.md` 에 있습니다.
-  객체 합성이 필요하면 `TMerge` 를 씁니다.
-- `runtimeConstraintChecker` 안에서 타입 검사를 다시 하지 마세요. 호출 규약상 타입은 이미 보장됩니다.
-- 에러 메시지를 즉시 문자열로 만들어 반환하지 마세요. 반드시 클로저로 감쌉니다.
+- `Default`, `Never`, `Intersect` 타입을 추가하지 마세요 (의도적으로 제외됨, 이유는
+  `packages/tbox/README.md` 참고). 객체 합성이 필요하면 `TMerge` 를 씁니다.
 - `.trash/` 는 gitignore 된 폐기 코드 보관소입니다. 참고만 하고 수정하지 마세요.
+- 워크스페이스 밖(저장소 루트)에 `src/`, `test/` 등을 다시 만들지 마세요 — 모든 실제 구현은
+  `packages/<name>/` 아래에 있어야 합니다.

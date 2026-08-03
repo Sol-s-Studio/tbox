@@ -50,6 +50,7 @@ export type TMerge<Tuple> = Merge.TMerge<Tuple>
 export type TMergeOptions = Merge.TMergeOptions
 export type TNumber = Number.TNumber
 export type TNumberOptions = Number.TNumberOptions
+export type TNumberFormat = Number.TNumberFormat
 export type TBoolean = Boolean.TBoolean
 export type TBooleanOptions = Boolean.TBooleanOptions
 export type TUnsafe<T> = Unsafe.TUnsafe<T>
