@@ -134,7 +134,7 @@ luau packages/tbox/test/run.luau            # 또는 cd packages/tbox && luau te
   하는 `src/init.luau` 와 이름이 겹쳐 `could not reset to requiring context (ambiguous)` 같은 오류를
   일으킵니다. `test/run.luau` 처럼 다른 이름을 쓰세요.
 - 패키지를 추가/수정하면 `test/schema/` 아래에 대응 파일을 추가/갱신하고 `test/run.luau` 의
-  require 목록에도 반영하세요. require 대상은 항상 문자열 리터럴로 적습니다 (동적 경로도 같은
+  require 목록에도 반영하세요 (`packages/tbox` 는 `test/luauBuild.luau` 의 `samples` 에도). require 대상은 항상 문자열 리터럴로 적습니다 (동적 경로도 같은
   "ambiguous" 오류를 유발할 수 있습니다).
 
 ### 중요: 실행 환경은 Roblox 가 아닙니다

@@ -60,9 +60,11 @@ scripts/
 ## 2차 세션(2026-09-30)에서 발견하고 고친 것
 
 1. `Util.escapeLuauString` 이 NUL 등 제어문자를 이스케이프하지 않아, NUL 이 든 싱글톤/키의
-   `luauBuild` 결과가 파싱되지 않았습니다. 이제 항상 세 자리 `\ddd` 로 이스케이프합니다.
+   `luauBuild` 결과가 파싱되지 않았습니다. 이제 `\a\b\f\n\r\t\v` 는 이름 있는 이스케이프로,
+   나머지 제어문자는 세 자리 `\ddd` 로 이스케이프합니다.
 2. `TObject`/`TMerge` 의 `luauBuild`/`format` 이 props 해시 순회 순서를 그대로 써서, 필드 순서가
-   환경(Luau 버전, Roblox vs CLI)마다 달라질 수 있었습니다. 이제 키를 정렬해 출력합니다.
+   환경(Luau 버전, Roblox vs CLI)마다 달라질 수 있었습니다. 이제 키를 정렬해 출력합니다 (`tostring`
+   기준 비교 — `any` 로 숫자 키가 섞여도 정렬 중에 터지지 않도록. 독립 리뷰에서 잡은 회귀입니다).
 3. Luau 는 테이블 타입 프로퍼티 이름에 NUL 을 (이스케이프해도) 허용하지 않습니다. 그런 키를 가진
    `TObject` 의 `luauBuild` 는 이제 명확한 에러를 냅니다.
 4. `vaild` 오타를 `valid` 로 고쳤습니다 — 공개 옵션 `TString.validUtf8Only` 포함 (breaking).
@@ -80,6 +82,14 @@ scripts/
 - `luau-analyze` 로 테스트 파일을 검사하면 `StaticTuple ... unsupported type pack type` 같은 에러가
   Union/Merge 를 쓰는 곳마다 나옵니다. 기존 파일에서도 똑같이 나오는 것으로, `luau-analyze` 가
   `.vscode/settings.json` 의 luau-lsp fflag 를 쓰지 않아서 생기는 노이즈입니다.
+
+독립 리뷰에서 나왔지만 이번 범위 밖이라 남겨둔 것 (모두 이 작업 이전부터 있던 동작):
+
+- `Type.Union(Type.Tuple())` (분기 0개) 의 `luauBuild` 가 빈 문자열을 내서 파싱되지 않습니다. 의미상
+  `never` 이지만 `Never` 는 의도적으로 제외된 개념이라 어떻게 다룰지(생성 시 에러 등)는 결정이 필요합니다.
+- 숫자 등 문자열/불리언이 아닌 `Singleton` 은 `luauBuild` 가 `unknown` 을 냅니다 (Luau 에 숫자 싱글톤
+  타입이 없음). `Instance` 의 클래스명과 `Unsafe` 의 `luauType` 은 사용자 입력을 그대로 출력합니다.
+- `TObject` 의 `inspectInner` 는 여전히 해시 순서로 돌려줍니다 (지금은 문자열화하는 곳이 없음).
 
 ## 남은 일 (우선순위 순)
 

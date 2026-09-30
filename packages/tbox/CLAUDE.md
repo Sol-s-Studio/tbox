@@ -31,9 +31,12 @@ luau test/run.luau          # 또는 직접 실행
   루트 설정(Luau 문법, 120컬럼, 스페이스 4칸)이 아니라 **기본 설정(탭, Lua 문법)이 조용히 적용됩니다.**
   실제로 `test/`, `scripts/` 가 이렇게 탭으로 포매팅돼 있었습니다. 항상 저장소 루트에서 실행하세요.
 - 정식 테스트 프레임워크는 없습니다. `test/schema/*.luau` 가 `src/schema/*` 를 1:1로 미러링하는
-  실행 가능한 문서 역할을 하며, `test/helper.luau` 의 `expectOk`/`expectFail`/`expectEqual`/`expectTrue` 로
-  기대값을 확인합니다. 불일치하면 그 자리에서 `error()` 로 중단됩니다. **새 스키마 타입을 추가하면
-  `test/schema/` 에 대응 파일을 추가하고 `test/run.luau` 의 require 목록에도 반영하세요.**
+  실행 가능한 문서 역할을 하며, `test/helper.luau` 의 `expectOk`/`expectFail`/`expectError`/`expectEqual`/
+  `expectTrue`/`expectParsableType` 로 기대값을 확인합니다. 불일치하면 그 자리에서 `error()` 로 중단됩니다.
+  그 밖에 `test/util.luau`, `base.luau`, `registry.luau` 는 내부 모듈 단위 테스트, `test/nested.luau` 는
+  컨테이너 중첩, `test/luauBuild.luau` 는 모든 타입의 `luauBuild` 결과가 실제로 파싱되는지를 봅니다.
+  **새 스키마 타입을 추가하면 `test/schema/` 에 대응 파일을 추가하고 `test/run.luau` 의 require 목록과
+  `test/luauBuild.luau` 의 `samples` 에도 반영하세요** (samples 에 빠진 등록 타입이 있으면 실패합니다).
 - `test/run.luau` 를 `init.luau` 로 이름 짓지 마세요 — `src/init.luau` 와 이름이 겹쳐 require 가
   `could not reset to requiring context (ambiguous)` 오류를 냅니다 (저장소 루트 CLAUDE.md 참고).
 - `pesde run test` 가 실행하는 `scripts/test.luau` 는 pesde 가 스크립트를 항상 Lune 으로 실행하기
@@ -191,8 +194,8 @@ return Base.TypeDefFactory("Foo", Foo, {
    — 이걸 빠뜨리면 런타임엔 동작하지만 `Type.Foo` 가 타입 에러가 납니다.
 
 마지막으로 `test/schema/`(컨테이너라면 `test/schema/json/`, Roblox 타입이라면 `test/schema/roblox/`)에
-`src/schema/` 와 동일한 파일명으로 테스트 파일을 추가하고, `test/run.luau` 의 require 목록에도
-반영한 뒤 `luau test/run.luau` (또는 `pesde run test`) 로 확인합니다.
+`src/schema/` 와 동일한 파일명으로 테스트 파일을 추가하고, `test/run.luau` 의 require 목록과
+`test/luauBuild.luau` 의 `samples` 에도 반영한 뒤 `luau test/run.luau` (또는 `pesde run test`) 로 확인합니다.
 
 ## 현재 상태 / 작업 대상
 
@@ -228,6 +231,10 @@ Roblox 타입을 다룰 때 알아야 할 것:
 
 - `TSchema.id` 필드는 정의만 되어 있고 아무도 사용하지 않습니다 (`$ref` 유사 기능 미구현).
 - `src/collect.luau` 는 아이디어 메모뿐인 빈 모듈입니다.
+- 한 값에서 여러 필드/요소가 동시에 실패하면 **어느 것이 에러로 보고될지는 테이블 순회 순서에 달려
+  있습니다** (Object 의 값 순회와 필수 필드 누락 검사, Map). 런타임 검사는 union 분기 선택에도 쓰이는
+  hot path 라 정렬하지 않았습니다. 반면 `luauBuild`/`format` 은 키를 정렬해 항상 같은 문자열을 냅니다.
+  테스트는 실패 지점이 하나뿐인 값으로 작성하세요.
 
 남은 계획은 `TODO.md` 에 있습니다.
 
