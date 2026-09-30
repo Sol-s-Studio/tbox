@@ -21,15 +21,15 @@ Helper.expectFail(Type:runtimeConstraintCheck(notNan, 0 / 0), "nan is not allowe
 const isFinite = Type.Number({ isFinite = true })
 Helper.expectOk(Type:runtimeConstraintCheck(isFinite, 1))
 Helper.expectFail(
-	Type:runtimeConstraintCheck(isFinite, math.huge),
-	"value must be a finite number, but a non-finite value inf was provided"
+    Type:runtimeConstraintCheck(isFinite, math.huge),
+    "value must be a finite number, but a non-finite value inf was provided"
 )
 
 const notFinite = Type.Number({ isFinite = false })
 Helper.expectOk(Type:runtimeConstraintCheck(notFinite, math.huge))
 Helper.expectFail(
-	Type:runtimeConstraintCheck(notFinite, 1),
-	"value must be a non-finite number, but a finite value 1 was provided"
+    Type:runtimeConstraintCheck(notFinite, 1),
+    "value must be a non-finite number, but a finite value 1 was provided"
 )
 
 const multipleOf = Type.Number({ multipleOf = 5 })
@@ -39,8 +39,8 @@ Helper.expectFail(Type:runtimeConstraintCheck(multipleOf, 7), "value must be mul
 const multipleOfOffset = Type.Number({ multipleOf = 5, multipleOfOffset = 2 })
 Helper.expectOk(Type:runtimeConstraintCheck(multipleOfOffset, 7))
 Helper.expectFail(
-	Type:runtimeConstraintCheck(multipleOfOffset, 10),
-	"value must be multiple of 5 with offset 2, but got 10"
+    Type:runtimeConstraintCheck(multipleOfOffset, 10),
+    "value must be multiple of 5 with offset 2, but got 10"
 )
 
 Helper.expectEqual(Type:luauBuild(Type.Number()), "number")

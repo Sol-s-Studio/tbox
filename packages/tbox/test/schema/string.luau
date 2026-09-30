@@ -11,8 +11,8 @@ Helper.expectFail(Type:runtimeTypeCheck(schema, 123), "string expected, but got 
 Helper.expectOk(Type:runtimeConstraintCheck(schema, "abc"))
 Helper.expectFail(Type:runtimeConstraintCheck(schema, "a"), "string too short. minimum allowed length is 2 characters")
 Helper.expectFail(
-	Type:runtimeConstraintCheck(schema, "abcdef"),
-	"string too long. maximum allowed length is 5 characters"
+    Type:runtimeConstraintCheck(schema, "abcdef"),
+    "string too long. maximum allowed length is 5 characters"
 )
 
 const utf8Only = Type.String({ validUtf8Only = true })

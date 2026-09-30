@@ -12,5 +12,5 @@ local result = process.exec("luau", { "test/run.luau" }, { stdio = "forward" })
 -- process.exit() 로 종료하면 pesde 가 내장한 lune 스케줄러가 패닉을 일으킨다
 -- (pesde 0.7.3 + lune 0.8.9 조합의 알려진 문제). error() 로 실패를 알리는 것으로 대신한다.
 if not result.ok then
-	error(`test/run.luau exited with code {result.code}`)
+    error(`test/run.luau exited with code {result.code}`)
 end

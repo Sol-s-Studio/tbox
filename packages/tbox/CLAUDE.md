@@ -24,9 +24,12 @@ TBox 는 **시리얼라이저가 아닙니다.** 값을 변환하거나 기본�
 ```bash
 pesde run test              # scripts/test.luau 브릿지를 거쳐 luau test/run.luau 를 실행
 luau test/run.luau          # 또는 직접 실행
-stylua src test scripts      # 포매팅 (저장소 루트 stylua.toml: Luau 문법, 120컬럼, 스페이스 4칸)
+(cd ../.. && stylua packages/tbox)  # 포매팅. 반드시 저장소 루트에서 (아래 참고)
 ```
 
+- stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 이 패키지 디렉터리에서 `stylua src test` 를 돌리면
+  루트 설정(Luau 문법, 120컬럼, 스페이스 4칸)이 아니라 **기본 설정(탭, Lua 문법)이 조용히 적용됩니다.**
+  실제로 `test/`, `scripts/` 가 이렇게 탭으로 포매팅돼 있었습니다. 항상 저장소 루트에서 실행하세요.
 - 정식 테스트 프레임워크는 없습니다. `test/schema/*.luau` 가 `src/schema/*` 를 1:1로 미러링하는
   실행 가능한 문서 역할을 하며, `test/helper.luau` 의 `expectOk`/`expectFail`/`expectEqual`/`expectTrue` 로
   기대값을 확인합니다. 불일치하면 그 자리에서 `error()` 로 중단됩니다. **새 스키마 타입을 추가하면

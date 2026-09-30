@@ -14,17 +14,17 @@ Helper.expectTrue(Type:canBeNil(unionTest), "a union containing an Optional bran
 
 -- 오브젝트 유니온: 어떤 분기와도 일치하지 않으면 각 분기별 실패 사유를 모두 보여준다
 const objectUnionTest = Type.Union(
-	Type.Tuple(
-		Type.Object({ a = Type.Boolean(), c = Type.Number() }),
-		Type.Object({ b = Type.Boolean(), c = Type.Number() })
-	)
+    Type.Tuple(
+        Type.Object({ a = Type.Boolean(), c = Type.Number() }),
+        Type.Object({ b = Type.Boolean(), c = Type.Number() })
+    )
 )
 
 Helper.expectFail(
-	Type:runtimeTypeCheck(objectUnionTest, { c = 1 }),
-	"union value check failed. value did not match any of the union members.\n"
-		.. "  branch 1: required object property 'a' not exist.\n"
-		.. "  branch 2: required object property 'b' not exist."
+    Type:runtimeTypeCheck(objectUnionTest, { c = 1 }),
+    "union value check failed. value did not match any of the union members.\n"
+        .. "  branch 1: required object property 'a' not exist.\n"
+        .. "  branch 2: required object property 'b' not exist."
 )
 Helper.expectOk(Type:runtimeTypeCheck(objectUnionTest, { a = true, c = 1 }))
 

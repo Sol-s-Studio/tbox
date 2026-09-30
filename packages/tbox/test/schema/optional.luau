@@ -8,8 +8,8 @@ const schema = Type.Optional(Type.Number({ min = 0 }))
 Helper.expectOk(Type:runtimeTypeCheck(schema, nil))
 Helper.expectOk(Type:runtimeTypeCheck(schema, 5))
 Helper.expectFail(
-	Type:runtimeTypeCheck(schema, "5"),
-	"optional value is not nil, but its inner type check failed.\n  number expected, but got string"
+    Type:runtimeTypeCheck(schema, "5"),
+    "optional value is not nil, but its inner type check failed.\n  number expected, but got string"
 )
 
 Helper.expectTrue(Type:canBeNil(schema), "Optional should accept nil")

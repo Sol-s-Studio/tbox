@@ -5,8 +5,8 @@ const Helper = require("../../helper")
 const Def = require("../../../src/schema/roblox/colorSequenceKeypoint")
 
 Helper.expectFail(
-	Type:runtimeTypeCheck(Type.ColorSequenceKeypoint(), 123),
-	"ColorSequenceKeypoint expected, but got number"
+    Type:runtimeTypeCheck(Type.ColorSequenceKeypoint(), 123),
+    "ColorSequenceKeypoint expected, but got number"
 )
 Helper.expectEqual(Type:luauBuild(Type.ColorSequenceKeypoint()), "ColorSequenceKeypoint")
 Helper.expectEqual(Type:format(Type.ColorSequenceKeypoint()), "TColorSequenceKeypoint")

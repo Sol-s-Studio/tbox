@@ -17,7 +17,7 @@ const anyEnumItem = Type.EnumItem(nil)
 Helper.expectEqual(Type:luauBuild(anyEnumItem), "EnumItem")
 
 const function mockEnumItem(enumType: string, name: string)
-	return { EnumType = enumType, Name = name }
+    return { EnumType = enumType, Name = name }
 end
 
 -- 주의: enumType 일치 여부는 runtimeTypeChecker 안에서 typeof(value) == "EnumItem" 을 먼저
@@ -32,8 +32,8 @@ const metal = mockEnumItem(mockEnumType, "Metal")
 
 Helper.expectOk(Type:runtimeConstraintCheck(restricted, plastic))
 Helper.expectFail(
-	Type:runtimeConstraintCheck(restricted, metal),
-	`EnumItem must be one of [{tostring(plastic)}, {tostring(wood)}], but got {tostring(metal)}`
+    Type:runtimeConstraintCheck(restricted, metal),
+    `EnumItem must be one of [{tostring(plastic)}, {tostring(wood)}], but got {tostring(metal)}`
 )
 
 return true
