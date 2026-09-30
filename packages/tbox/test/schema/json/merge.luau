@@ -20,9 +20,10 @@ Helper.expectEqual(
     Type:format(mergedObjectTest),
     "TMerge<TObject<{ a: TNumber }>, TObject<{ b: TNumber }>, TMerge<TObject<{ optional: TOptional<TNumber> }>>>"
 )
-Helper.expectEqual(Type:luauBuild(mergedObjectTest), "{ a: number, optional: (number)?, b: number }")
+Helper.expectEqual(Type:luauBuild(mergedObjectTest), "{ a: number, b: number, optional: (number)? }")
 
-Helper.expectFail(Type:runtimeTypeCheck(mergedObjectTest, {}), "required object property 'a' not exist.")
+-- 필수 필드가 여러 개 빠지면 어느 것이 보고될지는 순회 순서에 달려 있으므로, 하나만 빠뜨려서 확인한다
+Helper.expectFail(Type:runtimeTypeCheck(mergedObjectTest, { b = 2 }), "required object property 'a' not exist.")
 Helper.expectOk(Type:runtimeTypeCheck(mergedObjectTest, { a = 1, b = 2 }))
 
 Helper.expectFail(

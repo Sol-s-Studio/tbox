@@ -45,7 +45,18 @@ useBox({
     world = 1,
 })
 
-Helper.expectEqual(Type:luauBuild(box), `\{ hello: string, ["1aaa"]: number, world: number }`)
-Helper.expectEqual(Type:format(box), `TObject<\{ hello: TString, ["1aaa"]: TNumber, world: TNumber }>`)
+-- 필드는 키를 정렬한 순서로 출력된다 (props 는 해시 테이블이라 순회 순서가 환경마다 달라질 수 있다)
+Helper.expectEqual(Type:luauBuild(box), `\{ ["1aaa"]: number, hello: string, world: number }`)
+Helper.expectEqual(Type:format(box), `TObject<\{ ["1aaa"]: TNumber, hello: TString, world: TNumber }>`)
+
+-- 키가 많아도, 어떤 순서로 넣었어도 같은 문자열이 나온다
+const manyKeys = {}
+for _, key in { "zeta", "alpha", "mid", "b", "a", "Z", "_", "a1", "a_" } do
+    manyKeys[key] = Type.Number()
+end
+Helper.expectEqual(
+    Type:luauBuild(Type.Object(manyKeys)),
+    "{ Z: number, _: number, a: number, a1: number, a_: number, alpha: number, b: number, mid: number, zeta: number }"
+)
 
 return true

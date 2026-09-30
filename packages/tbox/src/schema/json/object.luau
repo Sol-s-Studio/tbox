@@ -23,11 +23,23 @@ const function Object<Props>(props: { [string]: Base.TSchema } & Props, options:
     })
 end
 
+-- props 의 키를 정렬해서 돌려준다. props 는 해시 테이블이라 순회 순서가 선언 순서와 무관하고, Luau 구현
+-- (버전, Roblox 와 CLI)에 따라서도 달라질 수 있다. 그대로 순회하면 같은 스키마가 환경마다 다른 문자열을
+-- 내므로, 문자열화할 때는 항상 이 순서를 쓴다. (테이블 생성자는 선언 순서를 남기지 않으므로 정렬뿐이다)
+const function sortedKeys(props: { [string]: Base.TSchema }): { string }
+    const keys: { string } = {}
+    for key in props do
+        table.insert(keys, key)
+    end
+    table.sort(keys)
+    return keys
+end
+
 const function luauBuilder(schema: TObject<any>): string
     const items: { string } = {}
-    for key, inner in schema.props do
+    for _, key in sortedKeys(schema.props) do
         local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
-        table.insert(items, `{ident}: {defaultUntypedNamespace:luauBuild(inner)}`)
+        table.insert(items, `{ident}: {defaultUntypedNamespace:luauBuild(schema.props[key])}`)
     end
 
     return `\{ {table.concat(items, ", ")} }`
@@ -35,9 +47,9 @@ end
 
 const function formatter(schema: TObject<any>): string
     const items: { string } = {}
-    for key, inner in schema.props do
+    for _, key in sortedKeys(schema.props) do
         local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
-        table.insert(items, `{ident}: {defaultUntypedNamespace:format(inner)}`)
+        table.insert(items, `{ident}: {defaultUntypedNamespace:format(schema.props[key])}`)
     end
 
     return `TObject<\{ {table.concat(items, ", ")} }>`
