@@ -21,6 +21,7 @@ TBox 는 Roblox 엔진 언어인 Luau 용 스키마 라이브러리입니다. Ty
 ## 설치
 
 ```bash
+mise trust && mise install   # 도구 버전 고정 (pesde, luau, stylua, lute, darklua)
 pesde install
 ```
 
@@ -29,8 +30,8 @@ pesde install
 ## 개발
 
 ```bash
-luau packages/tbox/test.luau   # 스모크 테스트 겸 사용 예제
-stylua packages                # 포매팅
+mise run test                  # 테스트 (luau + lute)
+mise run format                # 포매팅 (stylua packages)
 ```
 
 기여 시 지켜야 할 규칙은 [`CLAUDE.md`](CLAUDE.md) 와 각 패키지의 `CLAUDE.md` 를 참고하세요.

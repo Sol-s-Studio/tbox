@@ -9,9 +9,3 @@ includes = ["pesde.toml", "LICENSE", "README.md", "src/**/*.luau"]
 environment = "roblox"
 lib = "src/init.luau"
 build_files = ["src"]
-
-[scripts]
-test = { runtime = "lune", path = "scripts/test.luau" }
-
-[engines]
-lune = "^0.10.5"

@@ -109,6 +109,8 @@ push/pop·합성 빌더 사이로 그대로 전달만 하므로, 특정 라이�
   `could not resolve child component` 로 항상 실패합니다 (경로 어디에 심볼릭 링크가 끼어 있든 동일).
 - **`lune`** 은 심볼릭 링크는 따라가지만, 확인한 모든 버전(0.8.9, 0.9.4, 0.10.5)이 이 저장소 전역에서 쓰는
   `const` 지역 선언 문법(정식 Luau RFC 기능)을 파싱하지 못해 `tbox` 자체를 읽지 못합니다.
+- **`lute`**(1.0.0, 저장소 `mise.toml` 로 고정)는 `const` 는 파싱하지만 `luau` CLI 와 똑같이 심볼릭 링크를
+  따라가지 못합니다 (`could not resolve child component`).
 
 즉 지금은 어느 실행기로도 "다른 워크스페이스 패키지를 실제 require 하는" 테스트를 돌릴 수 없습니다.
 (Rojo/실제 Roblox 환경에서 이 문제가 재현되는지는 별개로 확인이 필요합니다 — Rojo 는 Luau require

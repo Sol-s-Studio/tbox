@@ -1,0 +1,39 @@
+# tbox 개발 도구와 작업. 처음 한 번 저장소 루트에서 `mise trust && mise install` 을 실행하세요.
+#
+# 테스트는 pesde 의 [scripts] 를 거치지 않고 여기 task 로 luau/lute 를 직접 실행합니다. pesde run 은 스크립트를
+# 항상 Lune 같은 엔진으로 실행하는데, Lune 은 이 저장소의 `const` 문법을 못 읽어 브릿지가 필요했고, 엔진을
+# ~/.pesde/bin 에서 PATH 로 찾기 때문에 그 경로를 PATH 에 따로 넣어야 했습니다 (CLAUDE.md "실행 / 검증" 참고).
+#
+# pesde 는 mise 레지스트리에 없어 github 백엔드로 고정합니다. mise 로 고정한 pesde 에는 `pesde self-upgrade` 를
+# 쓰지 마세요 — ~/.pesde/bin/pesde 를 새로 만들어 이 고정 버전을 가려버립니다. 버전을 올릴 땐 아래 값을 바꿉니다.
+
+[tools]
+# 0.7.4: pesde install 의 타입 스텁 추출기가 `const` 를 파싱한다 (0.7.3 은 "failed to parse" 에러를 냈음)
+"github:pesde-pkg/pesde" = "0.7.4+registry.0.2.3"
+luau = "0.734"
+# f<<T>> 를 시프트 연산자로 오해하는 문제가 있는 버전이다. 올릴 때 CLAUDE.md 의 stylua 경고를 다시 확인할 것
+stylua = "2.5.2"
+# 테스트를 luau 와 다른 런타임에서도 한 번 더 돌리고, scripts/*.luau (fs/process 가 필요한 도구)를 실행한다
+"github:luau-lang/lute" = "1.0.0"
+# scripts/studio-bundle.luau 가 Studio 로 보낼 소스를 줄이는 데 쓴다
+"github:seaofvoices/darklua" = "0.19.0"
+
+[tasks.test]
+description = "tbox 테스트 스위트를 luau 와 lute 에서 실행"
+dir = "{{config_root}}/packages/tbox"
+run = ["luau test/run.luau", "lute run test/run.luau"]
+
+[tasks.format]
+description = "stylua 로 전체 패키지 포매팅 (실행 후 f<<T>> 가 시프트 연산자로 바뀌지 않았는지 diff 확인)"
+dir = "{{config_root}}"
+run = "stylua packages"
+
+[tasks.format-check]
+description = "stylua 포매팅 검사"
+dir = "{{config_root}}"
+run = "stylua --check packages"
+
+[tasks.studio-bundle]
+description = "Roblox Studio 에서 실행할 테스트 청크를 stdout 으로 출력 (인자: all | cli-core | cli-roblox | studio)"
+dir = "{{config_root}}/packages/tbox"
+run = "lute run scripts/studio-bundle.luau"

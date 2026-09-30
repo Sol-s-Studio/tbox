@@ -1,7 +1,8 @@
 --!strict
 
 -- src/ 와 test/ 를 Roblox Studio 에서 그대로 실행할 수 있는 Luau 청크 하나로 묶어 stdout 으로 낸다.
--- 사용: (packages/tbox 에서) lune run scripts/studio-bundle [파트, 기본 all] > bundle.luau
+-- 사용: (packages/tbox 에서) lute run scripts/studio-bundle.luau [파트, 기본 all] > bundle.luau
+--       또는 저장소 루트에서 mise run studio-bundle -- [파트]
 -- 만든 청크는 Studio MCP 의 execute_luau(Edit) 등에 그대로 넘긴다.
 --
 -- 파트:
@@ -22,43 +23,51 @@
 -- 하므로 플레이스에 흔적을 남기지 않는다. 출력은 LogService 로 모아 청크의 반환값으로 돌려준다
 -- (Studio 에 남기지 않고 밖으로 뺀다).
 --
--- Lune 은 `const` 를 파싱하지 못하므로 이 파일은 `local` 만 쓴다 (scripts/test.luau 와 같은 이유).
--- 전송 크기를 줄이려고 darklua 로 주석/공백/타입 표기를 지우고 지역 변수 이름을 짧게 바꾼 사본을 묶는다
+-- Lute 로 실행한다 (Lune 과 달리 `const` 를 파싱한다). 전송 크기를 줄이려고 darklua 로 주석/공백/타입 표기를 지우고 지역 변수 이름을 짧게 바꾼 사본을 묶는다
 -- (청크 전체를 execute_luau 인자로 그대로 넘겨야 하므로 크기가 곧 비용이다). darklua 0.19 가 이 저장소
 -- 문법(`const`, `f<<T>>`)을 올바르게 처리하는지는 같은 설정으로 가공한 사본에서 `luau test/run.luau` 가
 -- 통과하는 것으로 확인했다. 이름 변경은 지역 변수에만 적용되므로 에러 메시지 문자열이나 Roblox 전역
 -- (Vector3 등)은 바뀌지 않는다.
 
-local fs = require("@lune/fs")
-local process = require("@lune/process")
+const fs = require("@std/fs")
+const process = require("@std/process")
 
-local partName = process.args[1] or "all"
-local workDir = "/tmp/tbox-studio-bundle-" .. tostring(os.time())
+-- Lute 의 process.args[1] 은 스크립트 경로다
+const partName = process.args[2] or "all"
+const workDir = "/tmp/tbox-studio-bundle-" .. tostring(os.time())
 
-local function run(program: string, args: { string })
-    local result = process.exec(program, args)
+const function run(command: { string })
+    const result = process.run(command)
     if not result.ok then
-        error(`{program} failed:\n{result.stderr}`)
+        error(`{command[1]} failed:\n{result.stderr}`)
     end
+end
+
+const function isFile(path: string): boolean
+    return fs.exists(path) and fs.type(path) == "file"
+end
+
+const function isDir(path: string): boolean
+    return fs.exists(path) and fs.type(path) == "dir"
 end
 
 -- 원본 소스에서 문자열 리터럴 require 대상을 순서대로 뽑는다.
 -- `(require :: any)("@lute/luau")` 같은 동적 호출은 일부러 걸리지 않는다 (Studio 에서는 쓰이지 않는 경로).
-local function readRequires(path: string): { string }
-    local result = {}
-    for target in string.gmatch(fs.readFile(path), 'require%(%s*"([^"]+)"%s*%)') do
+const function readRequires(path: string): { string }
+    const result = {}
+    for target in string.gmatch(fs.readFileToString(path), 'require%(%s*"([^"]+)"%s*%)') do
         table.insert(result, target)
     end
     return result
 end
 
-local function dirname(path: string): string
+const function dirname(path: string): string
     return string.match(path, "^(.*)/[^/]*$") or ""
 end
 
 -- base 디렉터리 기준으로 relative 를 풀어 저장소 기준 경로를 만든다 ("." / ".." 처리)
-local function joinPath(base: string, relative: string): string
-    local segments = {}
+const function joinPath(base: string, relative: string): string
+    const segments = {}
     for segment in string.gmatch(base, "[^/]+") do
         table.insert(segments, segment)
     end
@@ -72,30 +81,30 @@ local function joinPath(base: string, relative: string): string
     return table.concat(segments, "/")
 end
 
-local function moduleFile(modulePath: string): string
-    if fs.isFile(modulePath .. ".luau") then
+const function moduleFile(modulePath: string): string
+    if isFile(modulePath .. ".luau") then
         return modulePath .. ".luau"
-    elseif fs.isFile(modulePath .. "/init.luau") then
+    elseif isFile(modulePath .. "/init.luau") then
         return modulePath .. "/init.luau"
     end
     error(`cannot find module '{modulePath}'`)
 end
 
-local function isSrc(path: string): boolean
+const function isSrc(path: string): boolean
     return path == "src" or string.sub(path, 1, 4) == "src/"
 end
 
 -- test 쪽에서 실제로 필요한 파일 집합. src 는 항상 통째로 넣으므로 따라가지 않는다.
 -- 주의: init.luau 는 기준 디렉터리 규칙이 다르지만 test 에는 init.luau 가 없으므로 여기서는 다루지 않는다.
-local included: { [string]: boolean } = {}
-local function include(file: string)
+const included: { [string]: boolean } = {}
+const function include(file: string)
     if included[file] then
         return
     end
     included[file] = true
     for _, target in readRequires(file) do
         if string.sub(target, 1, 1) ~= "@" then
-            local resolved = joinPath(dirname(file), target)
+            const resolved = joinPath(dirname(file), target)
             if not isSrc(resolved) then
                 include(moduleFile(resolved))
             end
@@ -104,8 +113,8 @@ local function include(file: string)
 end
 
 -- entryFile 이 require 하는 모듈 목록(저장소 기준, 확장자 없음) 중 keep 을 통과한 것만 돌려준다
-local function entryModules(entryFile: string, keep: (target: string) -> boolean): { string }
-    local result = {}
+const function entryModules(entryFile: string, keep: (target: string) -> boolean): { string }
+    const result = {}
     for _, target in readRequires(entryFile) do
         if keep(target) then
             table.insert(result, joinPath(dirname(entryFile), target))
@@ -139,20 +148,20 @@ for _, modulePath in modules do
     include(moduleFile(modulePath))
 end
 
-fs.writeFile(
+fs.writeStringToFile(
     workDir .. ".json",
     '{ "rules": ["remove_comments", "remove_spaces", "remove_types", '
         .. '{ "rule": "rename_variables", "include_functions": true }, "remove_unused_variable"] }'
 )
 for _, dir in { "src", "test" } do
-    run("darklua", { "process", "--config", workDir .. ".json", dir, `{workDir}/{dir}` })
+    run({ "darklua", "process", "--config", workDir .. ".json", dir, `{workDir}/{dir}` })
 end
 
 -- darklua 가 주석/타입을 지운 자리에 빈 줄이 대량으로 남는다(전체의 약 1/3). 이 저장소에는 여러 줄에 걸친
 -- 문자열 리터럴이 없으므로(여러 줄 기대값은 모두 \n 이스케이프로 쓴다) 빈 줄을 지워도 의미가 바뀌지 않는다.
 -- 여러 줄 문자열을 추가하게 되면 이 처리를 다시 검토할 것.
-local function stripBlankLines(source: string): string
-    local kept = {}
+const function stripBlankLines(source: string): string
+    const kept = {}
     for line in string.gmatch(source .. "\n", "([^\n]*)\n") do
         if string.find(line, "%S") then
             table.insert(kept, line)
@@ -162,28 +171,28 @@ local function stripBlankLines(source: string): string
 end
 
 -- 소스를 담을 수 있는 가장 짧은 long bracket 을 고른다
-local function longString(source: string): string
+const function longString(source: string): string
     source = stripBlankLines(source)
     local level = 0
     while string.find(source, "]" .. string.rep("=", level) .. "]", 1, true) do
         level += 1
     end
-    local eq = string.rep("=", level)
+    const eq = string.rep("=", level)
     -- 여는 괄호 바로 뒤의 개행은 버려지므로 하나 덧붙여 원문을 보존한다
     return `[{eq}[\n{source}]{eq}]`
 end
 
 -- relPath 파일을 청크에 넣어야 하는가 (src 는 전부, test 는 include 로 모은 것만)
-local function wanted(relPath: string): boolean
+const function wanted(relPath: string): boolean
     return isSrc(relPath) or included[relPath] == true
 end
 
 -- relPath 디렉터리 아래에 넣을 파일이 하나라도 있는가
-local function dirWanted(relPath: string): boolean
+const function dirWanted(relPath: string): boolean
     if isSrc(relPath) then
         return true
     end
-    local prefix = relPath .. "/"
+    const prefix = relPath .. "/"
     for file in included do
         if string.sub(file, 1, #prefix) == prefix then
             return true
@@ -192,38 +201,41 @@ local function dirWanted(relPath: string): boolean
     return false
 end
 
-local lines: { string } = {}
+const lines: { string } = {}
 local nextId = 0
 
 -- relPath 디렉터리를 parentVar 아래에 재구성하고, 만들어진 인스턴스 변수 이름을 돌려준다.
 -- 소스는 darklua 가 가공한 workDir 쪽 사본에서 읽는다.
-local function emitDir(relPath: string, name: string, parentVar: string): string
+const function emitDir(relPath: string, name: string, parentVar: string): string
     nextId += 1
-    local var = `n{nextId}`
-    local processedDir = `{workDir}/{relPath}`
-    if fs.isFile(processedDir .. "/init.luau") then
+    const var = `n{nextId}`
+    const processedDir = `{workDir}/{relPath}`
+    if isFile(processedDir .. "/init.luau") then
         table.insert(
             lines,
             `local {var} = node("ModuleScript", "{name}", {parentVar}, {longString(
-                fs.readFile(processedDir .. "/init.luau")
+                fs.readFileToString(processedDir .. "/init.luau")
             )})`
         )
     else
         table.insert(lines, `local {var} = node("Folder", "{name}", {parentVar}, nil)`)
     end
-    local entries = fs.readDir(processedDir)
+    const entries: { string } = {}
+    for _, entry in fs.listDirectory(processedDir) do
+        table.insert(entries, entry.name)
+    end
     table.sort(entries)
     for _, entryName in entries do
-        local childRel = relPath .. "/" .. entryName
-        if fs.isDir(`{workDir}/{childRel}`) then
+        const childRel = relPath .. "/" .. entryName
+        if isDir(`{workDir}/{childRel}`) then
             if dirWanted(childRel) then
                 emitDir(childRel, entryName, var)
             end
         elseif entryName ~= "init.luau" and string.sub(entryName, -5) == ".luau" and wanted(childRel) then
-            local moduleName = string.sub(entryName, 1, -6)
+            const moduleName = string.sub(entryName, 1, -6)
             table.insert(
                 lines,
-                `node("ModuleScript", "{moduleName}", {var}, {longString(fs.readFile(`{workDir}/{childRel}`))})`
+                `node("ModuleScript", "{moduleName}", {var}, {longString(fs.readFileToString(`{workDir}/{childRel}`))})`
             )
         end
     end
@@ -252,7 +264,7 @@ emitDir("test", "test", "root")
 
 -- 모듈을 순서대로 실행한다. 모듈 안의 에러는 require 가 "Requested module experienced an error" 로
 -- 뭉개버리므로, 실제 메시지는 LogService 로 받은 출력에서 확인한다.
-local quoted = {}
+const quoted = {}
 for _, modulePath in modules do
     table.insert(quoted, `"{modulePath}"`)
 end
@@ -283,6 +295,6 @@ table.insert(
     `return (if ok then "RESULT: OK ({partName})" else \`RESULT: FAIL ({partName}) \{err}\`) .. "\\n" .. table.concat(logs, "\\n")`
 )
 
-fs.removeDir(workDir)
-fs.removeFile(workDir .. ".json")
+fs.removeDirectory(workDir, { recursive = true })
+fs.remove(workDir .. ".json")
 print(table.concat(lines, "\n"))

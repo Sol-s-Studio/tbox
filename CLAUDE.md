@@ -42,21 +42,27 @@ pesde 규칙상 **소문자, 숫자, `_` 만 허용**됩니다 (하이픈 불가
 pesde install     # 저장소 루트에서. 워크스페이스 전체(모든 packages/*)의 의존성을 한 번에 해석/링크
 ```
 
+- 도구 버전(pesde, luau, stylua, lute, darklua)은 루트 `mise.toml` 로 고정합니다. 처음 한 번
+  `mise trust && mise install` 을 실행하세요. pesde 는 mise 레지스트리에 없어 `github:pesde-pkg/pesde` 로
+  고정하며, **mise 로 고정한 pesde 에 `pesde self-upgrade` 를 쓰지 마세요** (`~/.pesde/bin/pesde` 를 새로
+  만들어 고정 버전을 가립니다). 버전은 `mise.toml` 에서 올립니다.
+
 - `pesde.lock` (루트 + 각 패키지)은 커밋합니다. 재현 가능한 설치를 위한 잠금 파일입니다.
 - `roblox_packages/`, `luau_packages/`, `lune_packages/` 는 `pesde install` 이 생성하는 설치 결과물이며
   `.gitignore` 에 등록되어 있습니다. 커밋하지 마세요.
 - **scope 는 `qwreey`** 로 통일합니다 (개인 계정 기준, 아직 실제 registry 에 publish 하지 않았습니다).
   회사(Sol-s-Studio) 스코프가 필요해지면 별도 스코프로 동시 배포하는 방식을 고려 중이며, 지금 임의로
   스코프를 바꾸거나 추가하지 마세요.
-- **알려진 pesde 이슈**: `pesde install` 시 각 패키지에서 "failed to parse file to extract types" 라는
-  긴 ERROR 로그가 출력됩니다. 이는 pesde 의 부가적인 타입 스텁 추출기가 이 저장소 전역에서 쓰는
-  `const` 지역 선언 문법(코드 스타일 참고)을 아직 파싱하지 못해서입니다. **설치 자체는 정상 동작**하며
-  (`roblox_packages/<pkg>.luau` 는 실제 소스로의 require 를 그대로 링크합니다), 이 에러는 무시해도
-  됩니다. `const` 를 `local` 로 바꿔서 이 경고를 없애려 하지 마세요 — 코드 스타일 위반입니다.
+- `pesde install` 시 "failed to parse file to extract types" 라는 긴 ERROR 로그가 나온다면 pesde 0.7.3
+  이하를 쓰고 있는 것입니다. 부가적인 타입 스텁 추출기가 `const` 문법을 못 읽어서였고 0.7.4 에서 고쳐졌습니다
+  (`mise.toml` 의 고정 버전). 설치 자체는 그때도 정상이었습니다. `const` 를 `local` 로 바꿔서 없애려 하지
+  마세요 — 코드 스타일 위반입니다.
 - **알려진 이슈: 로컬 크로스 패키지 테스트가 막혀 있습니다.** `tbox_squish`, `tbox_remote` 처럼 다른
-  워크스페이스 패키지를 실제 require 하는 코드는 지금 이 환경에서 `luau` 로도 `lune` 으로도
-  실행/테스트할 수 없습니다 (pesde 가 워크스페이스 의존성을 심볼릭 링크로 연결하는데, `luau` CLI 는
-  심볼릭 링크를 못 따라가고, `lune` 은 `const` 문법을 못 읽습니다 — 0.10.5 까지 확인). 의도적으로 보류된 상태이니
+  워크스페이스 패키지를 실제 require 하는 코드는 지금 이 환경에서 실행/테스트할 수 없습니다. pesde 가
+  워크스페이스 의존성을 심볼릭 링크로 연결하는데, `luau` CLI 와 `lute`(1.0.0) 는 심볼릭 링크를 못 따라가고
+  (`could not resolve child component`), `lune` 은 `const` 문법을 못 읽습니다(0.10.5 까지 확인). 다른 프로젝트
+  (`~/Projects/quad` 의 `scripts/relink.sh`)는 테스트 전에 링크를 실제 복사본으로 바꾸는 방식으로 우회합니다.
+  의도적으로 보류된 상태이니
   이 상태를 "고치려고" 코드 스타일을 바꾸지 마세요. 자세한 내용과 재현 방법은
   `packages/tbox_squish/CLAUDE.md` 의 "알려진 이슈" 절을 보세요.
 
@@ -111,24 +117,21 @@ Luau 의 require-by-string 은 `init.luau` 를 **그 파일이 들어있는 디�
 
 정식 테스트 프레임워크는 없습니다. 각 패키지의 `test/` 디렉터리(`test/run.luau` 진입점 +
 `test/schema/*.luau` 가 `src/schema/*` 를 1:1로 미러링)가 실행 가능한 문서 겸 스모크 테스트입니다.
-실패하면 어서션이 그냥 `error()` 로 중단시킵니다 (`packages/tbox/test/helper.luau` 의
-`expectOk`/`expectFail`/`expectEqual` 참고) — 별도 테스트 프레임워크를 억지로 두지 않았습니다.
+실패하면 어서션이 그냥 `error()` 로 중단시킵니다 (`packages/tbox/test/helper.luau` 참고) — 별도 테스트 프레임워크를 억지로 두지 않았습니다.
 
 ```bash
-pesde run test                              # 스크립트가 있는 패키지 디렉터리(packages/tbox)에서. 루트에는 없음
-luau packages/tbox/test/run.luau            # 또는 cd packages/tbox && luau test/run.luau
+mise run test            # packages/tbox 스위트를 luau 와 lute 양쪽에서 실행
+mise run format-check    # stylua --check packages (고칠 땐 mise run format, 이후 f<<T>> diff 확인)
+luau packages/tbox/test/run.luau   # mise 없이 직접 실행할 때
 ```
 
-- `pesde run` 은 스크립트를 Lune 으로 실행하는데, Lune 은 이 저장소 전역의 `const` 문법을 파싱하지
-  못합니다 (0.10.5 까지 확인). 그래서 `pesde.toml` 의 test 스크립트는 **Lune 호환(= `const` 미사용)
-  브릿지 스크립트** `scripts/test.luau` 를 가리키고, 그 브릿지가
-  `process.exec("luau", { "test/run.luau" }, ...)` 로 실제 테스트를 서브프로세스에 위임한 뒤 종료 코드를
-  그대로 돌려줍니다. `scripts/test.luau` 자체를 고칠 때는 이 파일만은 `const` 를 쓰지 않아야 합니다.
-- pesde 0.7 부터는 스크립트에 런타임을 명시해야 하고(`test = "scripts/test.luau"` 형태는
-  `don't know which runtime to use` 로 실패), 그 런타임은 `[engines]` 에 있어야 합니다. 그래서
-  `packages/tbox/pesde.toml` 은 `test = { runtime = "lune", path = "scripts/test.luau" }` +
-  `[engines] lune = "^0.10.5"` 입니다. pesde 가 Lune 을 `~/.pesde/engines` 에 받아 `~/.pesde/bin/lune` 으로
-  링크하므로 **`~/.pesde/bin` 이 PATH 에 있어야 합니다** (없으면 `failed to replace process` 패닉).
+- 테스트는 pesde 의 `[scripts]` 를 쓰지 않습니다. `pesde run` 은 스크립트를 Lune 같은 엔진으로 실행하는데,
+  Lune 은 `const` 를 못 읽어 브릿지 스크립트가 필요했고, pesde 가 엔진을 `~/.pesde/bin` 에서 **PATH 로**
+  찾기 때문에(`execvp`) 그 경로를 PATH 에 넣지 않으면 `failed to replace process` 로 패닉했습니다. 그래서
+  `mise.toml` 의 task 로 `luau` 와 `lute` 를 직접 실행합니다 (다른 Luau 프로젝트들도 같은 방식입니다).
+- `lute`(1.0.0)는 `const` 를 파싱하므로 `fs`/`process` 가 필요한 도구 스크립트(`packages/tbox/scripts/*.luau`)는
+  Lute 로 작성합니다. Lute 에는 전역 `loadstring` 이 없어서, 테스트는 소스 컴파일을 `Helper.loadChunk` 로
+  거칩니다 (`@lute/luau` 로 대체).
 - **테스트 엔트리 파일을 `init.luau` 로 이름 짓지 마세요.** 이 저장소의 `luau` 빌드는 `init.luau` 를
   디렉터리 인덱스 모듈로 특별 취급하는데, 엔트리 파일도 `init.luau` 라면 그 파일이 재귀적으로 require
   하는 `src/init.luau` 와 이름이 겹쳐 `could not reset to requiring context (ambiguous)` 같은 오류를

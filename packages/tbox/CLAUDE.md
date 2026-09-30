@@ -19,12 +19,10 @@ TBox 는 **시리얼라이저가 아닙니다.** 값을 변환하거나 기본�
 
 ## 실행 / 검증
 
-이 패키지 디렉터리(`packages/tbox`) 기준입니다.
-
 ```bash
-pesde run test              # scripts/test.luau 브릿지를 거쳐 luau test/run.luau 를 실행
-luau test/run.luau          # 또는 직접 실행
-(cd ../.. && stylua packages/tbox)  # 포매팅. 반드시 저장소 루트에서 (아래 참고)
+mise run test               # (어디서든) luau test/run.luau + lute run test/run.luau
+luau test/run.luau          # 이 패키지 디렉터리에서 직접 실행
+mise run format             # 포매팅. stylua 를 직접 쓸 땐 반드시 저장소 루트에서 (아래 참고)
 ```
 
 - stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 이 패키지 디렉터리에서 `stylua src test` 를 돌리면
@@ -39,10 +37,9 @@ luau test/run.luau          # 또는 직접 실행
   `test/luauBuild.luau` 의 `samples` 에도 반영하세요** (samples 에 빠진 등록 타입이 있으면 실패합니다).
 - `test/run.luau` 를 `init.luau` 로 이름 짓지 마세요 — `src/init.luau` 와 이름이 겹쳐 require 가
   `could not reset to requiring context (ambiguous)` 오류를 냅니다 (저장소 루트 CLAUDE.md 참고).
-- `pesde run test` 가 실행하는 `scripts/test.luau` 는 pesde 가 스크립트를 항상 Lune 으로 실행하기
-  때문에 존재하는 브릿지입니다. Lune 은 `const` 문법을 못 읽으므로(0.10.5 까지 확인), 이 파일 자체는 `const` 없이
-  작성하고 실제 테스트(`const` 를 쓰는 `test/run.luau`)는 `process.exec` 로 luau 서브프로세스에
-  위임합니다. Roblox 데이터타입 제약 검사기처럼 실제 값을 만들 수 없는 타입은 모듈을 직접
+- 스위트는 luau CLI, Lute, Roblox Studio 세 환경에서 모두 돌아야 합니다. 소스 문자열을 컴파일해야 하면
+  전역 `loadstring` 대신 `Helper.loadChunk` 를 쓰세요 (Lute 에는 `loadstring` 이 없습니다).
+- Roblox 데이터타입 제약 검사기처럼 실제 값을 만들 수 없는 타입은 모듈을 직접
   `require` 해 `Def.runtimeConstraintChecker(schema, mock)` 형태로 확인합니다 — 자세한 이유는
   아래 "실행 환경은 Roblox 가 아닙니다" 절을 보세요. 단, 클래스/Enum 판별처럼 `runtimeTypeChecker`
   안에서 `typeof(value)` 를 먼저 확인하는 분기는 mock 으로 우회할 수 없으므로(모의 테이블의
@@ -51,7 +48,8 @@ luau test/run.luau          # 또는 직접 실행
   `test/studio/run.luau` 는 CLI 스위트 전체(`../run`)를 돌린 뒤 `test/studio/roblox/*` 에서 `test/schema/roblox/*` 의
   mock 시나리오를 실제 Roblox 값으로 `Type:runtimeTypeCheck` → `Type:runtimeConstraintCheck` 순서로 다시 돌립니다
   (`test/studio/common.luau` 의 `check`, Instance 는 부모 nil 로 만들고 반드시 Destroy 하는 `withInstances`).
-  실행은 `lune run scripts/studio-bundle <part>` 로 청크를 만들어 Studio MCP `execute_luau`(Edit) 에 넘깁니다.
+  실행은 `mise run studio-bundle -- <part>` (= `lute run scripts/studio-bundle.luau <part>`)로 청크를 만들어
+  Studio MCP `execute_luau`(Edit) 에 넘깁니다.
   MCP 프록시의 요청 크기 제한(약 100KB) 때문에 `all` 대신 `cli-core`, `cli-roblox`, `studio` 세 파트로 나눠
   돌려야 합니다 (자세한 내용은 스크립트 머리말). src 버그로 보이지만 수정 여부가 정해지지 않은 기대값은
   `Helper.pending` 으로 기록만 하고 실행 끝에 `[pending]` 으로 출력됩니다. 확인한 실제 동작은 `RobloxApi.md` 4절.
@@ -202,7 +200,7 @@ return Base.TypeDefFactory("Foo", Foo, {
 
 마지막으로 `test/schema/`(컨테이너라면 `test/schema/json/`, Roblox 타입이라면 `test/schema/roblox/`)에
 `src/schema/` 와 동일한 파일명으로 테스트 파일을 추가하고, `test/run.luau` 의 require 목록과
-`test/luauBuild.luau` 의 `samples` 에도 반영한 뒤 `luau test/run.luau` (또는 `pesde run test`) 로 확인합니다.
+`test/luauBuild.luau` 의 `samples` 에도 반영한 뒤 `mise run test` (또는 `luau test/run.luau`) 로 확인합니다.
 
 ## 현재 상태 / 작업 대상
 

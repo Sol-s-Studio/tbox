@@ -11,7 +11,7 @@
 
 ```bash
 luau test/run.luau     # 직접 실행
-pesde run test          # scripts/test.luau 브릿지를 거쳐 동일한 걸 실행
+mise run test          # luau 와 lute 양쪽에서 실행 (저장소 루트 mise.toml)
 ```
 
 둘 다 마지막 줄에 `all schema tests passed.` 가 나오면 정상입니다. 실패하면 `error()` 로 그 자리에서
@@ -32,7 +32,7 @@ test/
     json/             object, array, merge
     roblox/            vector2, vector3, cframe, color3, ... (17개, RobloxApi.md 목록과 동일)
 scripts/
-  test.luau           pesde run test 용 Lune 호환 브릿지 (const 미사용, process.exec 로 luau 위임)
+  studio-bundle.luau  Roblox Studio 에서 돌릴 테스트 청크 생성 (Lute, darklua 사용)
 ```
 
 ## 이 세션에서 발견한 것 (반드시 읽을 것)
@@ -72,9 +72,12 @@ scripts/
 5. `vaild` 오타를 `valid` 로 고쳤습니다 — 공개 옵션 `TString.validUtf8Only` 포함 (breaking).
 6. stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 패키지 안에서 돌려서 `test/`, `scripts/` 가
    기본 설정(탭)으로 포매팅돼 있던 것을 루트 설정으로 복구했습니다.
-7. pesde 0.7 은 스크립트에 런타임 명시가 필요해 `pesde run test` 가 깨져 있었습니다. 이제
-   `pesde.toml` 에 `runtime = "lune"` + `[engines] lune = "^0.10.5"` 로 고정합니다 (`~/.pesde/bin`
-   이 PATH 에 있어야 함).
+7. pesde 0.7 은 스크립트에 런타임 명시가 필요해 `pesde run test` 가 깨져 있었습니다. 결국 pesde 의
+   `[scripts]` 와 Lune 브릿지를 없애고, 루트 `mise.toml` 로 도구를 고정한 뒤 `mise run test` 가 luau 와
+   lute 로 직접 실행하도록 바꿨습니다 (Lute 1.0 은 `const` 를 읽음).
+8. Roblox Studio 실환경 검증(`test/studio/`)에서 `TVector` 가 Roblox 의 vector(typeof "Vector3")를 거부하던
+   것, `Region3.maxVolume` 이 뒤집힌 영역(음수 Size)을 통과시키던 것, float32 로 저장되는 필드가 숫자 경계와
+   어긋나던 것을 찾아 고쳤습니다. 관찰한 엔진 동작은 `RobloxApi.md` 4절.
 
 고치지 않고 남겨둔 것:
 
@@ -102,16 +105,15 @@ scripts/
 - [x] **컨테이너 타입의 더 깊은 중첩 케이스** — `test/nested.luau` 추가. 들여쓰기 누적(12단계까지),
       union 속 union, canBeNil 전달, union 분기 선택과 Object 공변성의 상호작용을 고정했습니다.
       함께 `test/luauBuild.luau` 로 모든 타입의 출력이 파싱되는지 검사합니다.
-- [ ] **Roblox 목 테스트는 실제 Roblox 환경에서 한 번도 검증되지 않았습니다.** 이 저장소는 `luau`/
-      `lune` 로만 실행 가능해서 `mockVector2` 같은 목 테이블이 실제 Roblox 데이터타입의 동작과
-      진짜로 일치하는지는 육안 검토로만 확인했습니다. Rojo + Studio 테스트 러너(또는 test-cli 같은
-      실제 Roblox 실행 환경)가 생기면 `RobloxApi.md` 기준으로 한 번 교차검증하는 게 좋습니다.
+- [x] **Roblox 실환경 검증** — `test/studio/` 로 mock 시나리오를 실제 Roblox 값으로 다시 돌립니다 (Studio MCP,
+      `mise run studio-bundle -- <part>`). 세 파트 모두 통과했고, 찾은 src 버그는 위 8번처럼 고쳤습니다.
 - [ ] **`packages/tbox_squish`, `packages/tbox_remote` 에는 테스트가 아예 없습니다.** 이번 작업
       범위 밖입니다 (`tbox_squish` 는 `compile()` 이 막 구현됨, `tbox_remote` 는 스캐폴드만 존재 —
       루트 `CLAUDE.md` "인수인계 메모" 참고). `tbox_squish` 부터 이 `test/` 구조를 참고해서 시작하면
       될 것 같습니다. 단, 루트 CLAUDE.md 의 "로컬 크로스 패키지 테스트가 막혀 있습니다" 이슈부터
-      확인하세요 (워크스페이스 심볼릭 링크를 `luau` 가 못 따라가고 `lune` 은 `const` 를 못 읽음).
-- [ ] (선택) CI 연동. 지금은 사람이 `pesde run test` 를 수동으로 돌려야 합니다. GitHub Actions 등에
+      확인하세요 (워크스페이스 심볼릭 링크를 `luau`/`lute` 가 못 따라가고 `lune` 은 `const` 를 못 읽음).
+      `~/Projects/quad` 의 `scripts/relink.sh` (링크를 복사본으로 바꾸는 방식)가 참고할 만합니다.
+- [ ] (선택) CI 연동. 지금은 사람이 `mise run test` 를 수동으로 돌려야 합니다. GitHub Actions 등에
       아직 연결 안 되어 있습니다 — 필요하면 `luau`/`pesde` 설치 스텝부터 고민해야 합니다.
 
 ## 참고
