@@ -49,6 +49,17 @@ useBox({
 Helper.expectEqual(Type:luauBuild(box), `\{ ["1aaa"]: number, hello: string, world: number }`)
 Helper.expectEqual(Type:format(box), `TObject<\{ ["1aaa"]: TNumber, hello: TString, world: TNumber }>`)
 
+-- NUL 이 들어간 프로퍼티 이름은 Luau 테이블 타입으로 표현할 수 없으므로 luauBuild 가 에러를 낸다.
+-- (format 은 사람이 읽는 용도라 파싱될 필요가 없으므로 이스케이프해서 그대로 보여준다)
+const nulKey = Type.Object({ ["a\0b"] = Type.Number() })
+Helper.expectError(function()
+    Type:luauBuild(nulKey)
+end, "object property name 'a\\000b' contains a NUL character and cannot be expressed as a luau type")
+Helper.expectError(function()
+    Type:luauBuild(Type.Array(nulKey))
+end, "object property name 'a\\000b' contains a NUL character and cannot be expressed as a luau type")
+Helper.expectEqual(Type:format(nulKey), `TObject<\{ ["a\\000b"]: TNumber }>`)
+
 -- 키가 많아도, 어떤 순서로 넣었어도 같은 문자열이 나온다
 const manyKeys = {}
 for _, key in { "zeta", "alpha", "mid", "b", "a", "Z", "_", "a1", "a_" } do

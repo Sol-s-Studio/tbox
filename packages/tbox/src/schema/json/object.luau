@@ -38,6 +38,13 @@ end
 const function luauBuilder(schema: TObject<any>): string
     const items: { string } = {}
     for _, key in sortedKeys(schema.props) do
+        -- Luau 는 테이블 타입의 프로퍼티 이름에 NUL 을 허용하지 않는다 (이스케이프해도 거부되며, 값 테이블이나
+        -- 문자열 싱글톤 타입에서는 허용된다). 표현할 방법이 없으므로 파싱되지 않는 타입을 내보내는 대신 알린다.
+        if string.find(key, "\0", 1, true) then
+            error(
+                `object property name '{Util.escapeLuauString(key)}' contains a NUL character and cannot be expressed as a luau type`
+            )
+        end
         local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
         table.insert(items, `{ident}: {defaultUntypedNamespace:luauBuild(schema.props[key])}`)
     end
