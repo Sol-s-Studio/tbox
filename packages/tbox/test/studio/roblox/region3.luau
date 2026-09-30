@@ -31,18 +31,16 @@ Helper.expectFail(Common.check(schema, region(9, 9, 9)), "volume too big. maximu
 
 -- Rect 와 달리 Region3.new 는 뒤집힌 모서리(min > max)를 정규화하지 않고 음수 Size 로 저장한다
 -- (Studio 에서 확인: Region3.new((5, 0, 0), (0, 5, 5)).Size == (-5, 5, 5)). minSize 를 주면 걸러지지만,
--- maxVolume 만 준 스키마는 음수 축이 홀수 개면 부피가 음수가 되어 어떤 크기라도 통과시킨다.
+-- 그래서 maxVolume 은 부피의 절댓값으로 비교한다 (음수 축이 홀수 개면 곱이 음수가 되므로).
 const inverted = Region3.new(Vector3.new(1000, 0, 0), Vector3.new(0, 1000, 1000))
 Helper.expectEqual(inverted.Size, Vector3.new(-1000, 1000, 1000))
 Helper.expectFail(
     Common.check(Type.Region3({ minSize = Vector3.new(1, 1, 1) }), inverted),
     "size.x too small. minimum allowed size.x value is 1"
 )
-Helper.pending("TRegion3 maxVolume should reject an inverted Region3 whose size is (-1000, 1000, 1000)", function()
-    Helper.expectFail(
-        Common.check(Type.Region3({ maxVolume = 500 }), inverted),
-        "volume too big. maximum allowed volume is 500"
-    )
-end)
+Helper.expectFail(
+    Common.check(Type.Region3({ maxVolume = 500 }), inverted),
+    "volume too big. maximum allowed volume is 500"
+)
 
 return true

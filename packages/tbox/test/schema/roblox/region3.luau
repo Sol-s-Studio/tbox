@@ -31,5 +31,10 @@ Helper.expectFail(
     Def.runtimeConstraintChecker(schema, mockRegion3(9, 9, 9)),
     "volume too big. maximum allowed volume is 500"
 )
+-- 실제 Region3 는 뒤집힌 모서리를 음수 Size 로 저장한다. 음수 축이 홀수 개여도 부피는 크기로 비교해야 한다
+Helper.expectFail(
+    Def.runtimeConstraintChecker(Type.Region3({ maxVolume = 500 }), mockRegion3(-1000, 1000, 1000)),
+    "volume too big. maximum allowed volume is 500"
+)
 
 return true

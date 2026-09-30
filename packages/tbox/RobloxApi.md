@@ -288,8 +288,8 @@ mock 테스트(`test/schema/roblox/`)가 가정한 것과 다른 부분 위주�
   키포인트는 Time 범위(예: 1.5)도, 음수 봉투도 막지 않습니다.
 - **NumberRange**: `NumberRange.new(5, 1)` 은 `NumberRange: invalid range` 에러.
 - **Region3**: `Rect` 와 달리 뒤집힌 모서리를 정규화하지 않고 음수 `Size` 로 저장합니다
-  (`Region3.new((5,0,0), (0,5,5)).Size == (-5, 5, 5)`). 음수 축이 홀수 개면 `Size.X*Size.Y*Size.Z` 가 음수가 되어
-  `maxVolume` 만 준 스키마는 어떤 크기든 통과시킵니다.
+  (`Region3.new((5,0,0), (0,5,5)).Size == (-5, 5, 5)`). 음수 축이 홀수 개면 `Size.X*Size.Y*Size.Z` 가 음수가 되므로
+  `maxVolume` 은 부피의 절댓값으로 비교합니다 (예전에는 이 경우 어떤 크기든 통과했습니다).
 - **UDim / UDim2**: `Offset` 은 32비트 정수입니다. `UDim.new(0, 1.5).Offset == 1` (버림), `UDim.new(0, 3e9).Offset ==
   -2147483648` (오버플로). 따라서 `integerOffsetOnly` 는 실제 값에 대해 항상 통과합니다.
 - **DateTime**: 지원 범위 밖은 생성 시점에 에러입니다 (`... UnixTimestampMillis should be between -17987443200000

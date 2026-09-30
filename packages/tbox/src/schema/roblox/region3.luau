@@ -78,7 +78,9 @@ const function runtimeConstraintChecker(schema: TRegion3, value: Region3): (() -
     end
 
     if schema.maxVolume then
-        const volume = value.Size.X * value.Size.Y * value.Size.Z
+        -- Region3.new 는 뒤집힌 모서리(min > max)를 정규화하지 않고 음수 Size 로 저장한다 (Studio 에서 확인,
+        -- RobloxApi.md 4절). 음수 축이 홀수 개면 곱이 음수가 되어 어떤 크기든 통과하므로 절댓값으로 비교한다.
+        const volume = math.abs(value.Size.X * value.Size.Y * value.Size.Z)
         if volume > schema.maxVolume then
             return function()
                 return `volume too big. maximum allowed volume is {schema.maxVolume}`
