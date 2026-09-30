@@ -156,13 +156,10 @@ luau packages/tbox/test/run.luau            # 또는 cd packages/tbox && luau te
 
 원래 플랫 구조(저장소 루트에 `src/`, `test.luau` 등)였던 이 저장소를 지금의 `packages/tbox`,
 `packages/tbox_squish`, `packages/tbox_remote` 워크스페이스 구조로 옮기고, `tbox_squish` 의
-`compile()` 을 실제로 구현하는 작업을 막 마친 상태입니다.
+`compile()` 을 실제로 구현했습니다. 이 전환은 `ef7b0e2` 로 커밋되었습니다 (사용자의 별개 작업이던
+`packages/tbox/src/schema/json/array.luau` 의 `numericIndexOnly` 옵션 제거도 같은 커밋에 들어 있습니다).
+그 뒤 `packages/tbox` 테스트 보강 작업의 상태는 `packages/tbox/test-todo.md` 에 있습니다.
 
-- **현재 모든 변경은 `git add` 로 스테이징만 되어 있고 커밋되지 않았습니다** (사용자가 명시적으로
-  요청하기 전까지 커밋하지 않는다는 표준 방침 때문입니다). `git status` 로 확인하면 대부분 `A`/`R`
-  (모노레포 이동으로 인한 rename 포함)이고, `packages/tbox/src/schema/json/array.luau` 는 사용자가
-  이 세션 시작 전부터 갖고 있던 별개의 우선 작업(`numericIndexOnly` 옵션 제거)이 이동 과정에 실려
-  함께 스테이징돼 있습니다 — 이건 건드리지 마세요.
 - `packages/tbox_squish/src/init.luau` 의 `compile()` 은 `Number`/`String`/`Boolean`/`Singleton`/
   `Optional`/`Array`/`Object`/`Merge`/`Union`/`Map` 을 지원하는 실제 구현입니다. `Any`/`Nil`/`Unsafe`/
   `Vector`/Roblox 데이터타입은 아직 미지원(TODO, compile 시점 error). 설계 근거와 최근 리팩터
