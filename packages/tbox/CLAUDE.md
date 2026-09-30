@@ -37,7 +37,7 @@ luau test/run.luau          # 또는 직접 실행
 - `test/run.luau` 를 `init.luau` 로 이름 짓지 마세요 — `src/init.luau` 와 이름이 겹쳐 require 가
   `could not reset to requiring context (ambiguous)` 오류를 냅니다 (저장소 루트 CLAUDE.md 참고).
 - `pesde run test` 가 실행하는 `scripts/test.luau` 는 pesde 가 스크립트를 항상 Lune 으로 실행하기
-  때문에 존재하는 브릿지입니다. Lune 0.8.9 는 `const` 문법을 못 읽으므로, 이 파일 자체는 `const` 없이
+  때문에 존재하는 브릿지입니다. Lune 은 `const` 문법을 못 읽으므로(0.10.5 까지 확인), 이 파일 자체는 `const` 없이
   작성하고 실제 테스트(`const` 를 쓰는 `test/run.luau`)는 `process.exec` 로 luau 서브프로세스에
   위임합니다. Roblox 데이터타입 제약 검사기처럼 실제 값을 만들 수 없는 타입은 모듈을 직접
   `require` 해 `Def.runtimeConstraintChecker(schema, mock)` 형태로 확인합니다 — 자세한 이유는

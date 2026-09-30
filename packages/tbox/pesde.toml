@@ -11,4 +11,7 @@ lib = "src/init.luau"
 build_files = ["src"]
 
 [scripts]
-test = "scripts/test.luau"
+test = { runtime = "lune", path = "scripts/test.luau" }
+
+[engines]
+lune = "^0.10.5"

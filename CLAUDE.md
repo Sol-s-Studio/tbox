@@ -56,7 +56,7 @@ pesde install     # 저장소 루트에서. 워크스페이스 전체(모든 pac
 - **알려진 이슈: 로컬 크로스 패키지 테스트가 막혀 있습니다.** `tbox_squish`, `tbox_remote` 처럼 다른
   워크스페이스 패키지를 실제 require 하는 코드는 지금 이 환경에서 `luau` 로도 `lune` 으로도
   실행/테스트할 수 없습니다 (pesde 가 워크스페이스 의존성을 심볼릭 링크로 연결하는데, `luau` CLI 는
-  심볼릭 링크를 못 따라가고, `lune` 0.8.9 는 `const` 문법을 못 읽습니다). 의도적으로 보류된 상태이니
+  심볼릭 링크를 못 따라가고, `lune` 은 `const` 문법을 못 읽습니다 — 0.10.5 까지 확인). 의도적으로 보류된 상태이니
   이 상태를 "고치려고" 코드 스타일을 바꾸지 마세요. 자세한 내용과 재현 방법은
   `packages/tbox_squish/CLAUDE.md` 의 "알려진 이슈" 절을 보세요.
 
@@ -115,15 +115,20 @@ Luau 의 require-by-string 은 `init.luau` 를 **그 파일이 들어있는 디�
 `expectOk`/`expectFail`/`expectEqual` 참고) — 별도 테스트 프레임워크를 억지로 두지 않았습니다.
 
 ```bash
-pesde run test                              # 저장소 루트 또는 각 패키지 디렉터리에서
+pesde run test                              # 스크립트가 있는 패키지 디렉터리(packages/tbox)에서. 루트에는 없음
 luau packages/tbox/test/run.luau            # 또는 cd packages/tbox && luau test/run.luau
 ```
 
-- `pesde run` 은 스크립트를 항상 Lune 으로 실행하는데, Lune 0.8.9 는 이 저장소 전역의 `const`
-  문법을 파싱하지 못합니다. 그래서 각 패키지의 `pesde.toml` 은 `[scripts] test = "scripts/test.luau"`
-  로 **Lune 호환(= `const` 미사용) 브릿지 스크립트**를 가리키고, 그 브릿지가
-  `process.exec("luau", { "test/run.luau" }, ...)` 로 실제 테스트를 서브프로세스에 위임합니다.
-  `scripts/test.luau` 자체를 고칠 때는 이 파일만은 `const` 를 쓰지 않아야 한다는 것을 기억하세요.
+- `pesde run` 은 스크립트를 Lune 으로 실행하는데, Lune 은 이 저장소 전역의 `const` 문법을 파싱하지
+  못합니다 (0.10.5 까지 확인). 그래서 `pesde.toml` 의 test 스크립트는 **Lune 호환(= `const` 미사용)
+  브릿지 스크립트** `scripts/test.luau` 를 가리키고, 그 브릿지가
+  `process.exec("luau", { "test/run.luau" }, ...)` 로 실제 테스트를 서브프로세스에 위임한 뒤 종료 코드를
+  그대로 돌려줍니다. `scripts/test.luau` 자체를 고칠 때는 이 파일만은 `const` 를 쓰지 않아야 합니다.
+- pesde 0.7 부터는 스크립트에 런타임을 명시해야 하고(`test = "scripts/test.luau"` 형태는
+  `don't know which runtime to use` 로 실패), 그 런타임은 `[engines]` 에 있어야 합니다. 그래서
+  `packages/tbox/pesde.toml` 은 `test = { runtime = "lune", path = "scripts/test.luau" }` +
+  `[engines] lune = "^0.10.5"` 입니다. pesde 가 Lune 을 `~/.pesde/engines` 에 받아 `~/.pesde/bin/lune` 으로
+  링크하므로 **`~/.pesde/bin` 이 PATH 에 있어야 합니다** (없으면 `failed to replace process` 패닉).
 - **테스트 엔트리 파일을 `init.luau` 로 이름 짓지 마세요.** 이 저장소의 `luau` 빌드는 `init.luau` 를
   디렉터리 인덱스 모듈로 특별 취급하는데, 엔트리 파일도 `init.luau` 라면 그 파일이 재귀적으로 require
   하는 `src/init.luau` 와 이름이 겹쳐 `could not reset to requiring context (ambiguous)` 같은 오류를
