@@ -75,4 +75,21 @@ function Helper.expectTrue(condition: boolean, message: string)
     end
 end
 
+-- 실제 환경(Roblox Studio 등)에서 드러났지만 아직 src 를 고칠지 결정하지 않은 불일치를 모아두는 목록.
+-- 이런 기대값을 그냥 어서션으로 쓰면 스위트 전체가 멈춰서 나머지 검사를 못 돌리게 되고, 반대로 지워버리면
+-- 문제가 잊힌다. 그래서 실패를 여기에 기록만 하고 진행하며, 진입 스크립트(test/studio/run.luau)가
+-- 마지막에 목록을 출력한다.
+Helper.knownDiscrepancies = {} :: { string }
+
+-- fn 안의 어서션은 "올바른 동작이라면 이래야 한다" 는 기대값이다. 실패하면 description 과 함께 기록하고
+-- 계속 진행한다. 통과하면 src 가 고쳐졌다는 뜻이므로 pending 을 풀라는 메모를 남긴다.
+function Helper.pending(description: string, fn: () -> ())
+    const ok, err = pcall(fn)
+    if ok then
+        table.insert(Helper.knownDiscrepancies, `[resolved? remove pending] {description}`)
+    else
+        table.insert(Helper.knownDiscrepancies, `{description}\n    {tostring(err)}`)
+    end
+end
+
 return Helper

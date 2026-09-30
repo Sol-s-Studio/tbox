@@ -16,6 +16,9 @@
 - `type()` 과 `typeof()` 는 다릅니다. Roblox 의 `Vector3` 는 네이티브 `vector` 로 표현되지만
   `typeof()` 는 `"Vector3"` 를 반환합니다. standalone 에서 `typeof(vector.create(1,2,3))` 는 `"vector"` 입니다
   (확인함). 기존 `src/schema/vector.luau` (네이티브 `vector`) 와 `roblox/vector3.luau` 는 별개 타입으로 다뤄야 합니다.
+  **단, Roblox 안에서는 `typeof(vector.create(1,2,3))` 도 `"Vector3"` 입니다** (Studio 에서 확인). 즉 Roblox 에서는
+  두 값이 구별되지 않으며, `typeof == "vector"` 로 판별하는 `TVector` 는 Roblox 에서 진짜 vector 를 거부합니다
+  (아래 4절 참고).
 
 ## 1. typeof 문자열 표
 
@@ -140,7 +143,8 @@ CFrame 의 회전 부분은 쿼터니언이 아니라 **9개 raw float(기저벡
   - 키포인트는 **최소 2개**
   - `Time` 은 **비내림차순**
   - 첫 키포인트 `Time == 0`, 마지막 키포인트 `Time == 1`
-  - (미확인) 최대 키포인트 개수 20 제한이 있는 것으로 알려져 있음 — 구현 시 옵션으로 두고 기본은 끄는 편이 안전
+  - 최대 키포인트 개수 20 (Studio 에서 확인: 21개부터 `ColorSequence.new(): table is too long.` 에러).
+    `NumberSequence` 도 같습니다
 - 제약 옵션 후보: `minKeypoints`/`maxKeypoints`, 키포인트 요소용 하위 스키마
 
 ### NumberSequenceKeypoint
@@ -169,7 +173,9 @@ CFrame 의 회전 부분은 쿼터니언이 아니라 **9개 raw float(기저벡
 - 생성자: `Rect.new()`, `Rect.new(min: Vector2, max: Vector2)`, `Rect.new(minX, minY, maxX, maxY)`
 - 프로퍼티: `Min` (Vector2), `Max` (Vector2), `Width` (number), `Height` (number)
 - 제약 옵션 후보: `maxWidth`/`maxHeight`/`minWidth`/`minHeight`, `min`/`max` 경계 Vector2,
-  `normalizedOnly` (Min <= Max 보장 — 생성자는 이를 강제하지 않음)
+  `normalizedOnly` (Min <= Max 보장). **주의: 원래 "생성자는 이를 강제하지 않음" 으로 적었으나 틀렸습니다.**
+  Studio 에서 확인한 결과 두 생성자 모두 모서리를 정규화해 저장합니다 (`Rect.new(5, 0, 0, 5)` → Min (0, 0),
+  Max (5, 5)). 실제 Rect 로는 nan 성분 외에 `normalizedOnly` 에 걸리는 값을 만들 수 없습니다
 
 ### Region3
 
@@ -256,3 +262,41 @@ CFrame 의 회전 부분은 쿼터니언이 아니라 **9개 raw float(기저벡
 `PathWaypoint`, `Random`, `Content`, `SharedTable`, `CatalogSearchParams`, `Secret`, `buffer`
 
 이 중 실사용 빈도는 `UDim`, `BrickColor`, `Font`, `TweenInfo`, `Ray`, `Vector3int16` 순으로 높습니다.
+
+## 4. Studio 에서 확인한 실제 동작 (2026-09-30, Studio Luau 0.740)
+
+`test/studio/` 의 실제 값 테스트(`scripts/studio-bundle.luau` 로 묶어 Studio MCP 로 실행)를 만들면서 확인한 것들입니다.
+mock 테스트(`test/schema/roblox/`)가 가정한 것과 다른 부분 위주로 적습니다.
+
+- **32비트 float 저장**: `Vector2`/`Vector3`/`Color3` 성분, 키포인트 `Time`/`Value`/`Envelope`, `NumberRange.Min/Max`,
+  `UDim.Scale` 은 float32 입니다. `Color3.new(0.9, 0, 0).R == 0.8999999761581421`,
+  `NumberSequenceKeypoint.new(0, 0, 0.2).Envelope == 0.20000000298023224`. 그래서
+  (1) 값을 그대로 보여주는 에러 메시지는 mock 버전과 문구가 달라지고,
+  (2) 스키마 옵션을 64비트 숫자로 주면 경계값에서 어긋납니다: `ColorSequenceKeypoint.new(0.8, c)` 는
+  `maxTime = 0.8` 에 걸리고, `NumberRange.new(0, 0.1)` 은 `max = 0.1` 에 걸립니다. (옵션을 같은 Roblox 타입으로 주는
+  `Vector3`/`Color3` 의 min/max 는 양쪽이 모두 float32 라 어긋나지 않습니다.)
+- **nan 은 그대로 저장**: `Vector2/Vector3/Color3/CFrame` 생성자 모두 nan 성분을 거부하지 않습니다. `Color3.new` 는
+  0~1 밖 값도 그대로 저장합니다. 즉 `notNan`/`clampedOnly` 는 실제로 의미가 있습니다.
+- **CFrame**: 12성분 `CFrame.new` 와 4인자 `CFrame.fromMatrix` 는 스케일/거울상 회전을 그대로 받습니다.
+  거울상은 정규직교라 `orthonormalOnly` 를 통과하고 `rightHandedOnly` 에서만 걸리며, `Orthonormalize()` 뒤에도
+  행렬식이 -1 로 남습니다 (2절 CFrame 의 주장이 실제로 맞음).
+- **ColorSequence / NumberSequence**: 최소 2개, 첫 Time 0, 마지막 Time 1, 비내림차순, 최대 20개를 전부 생성 시점에
+  에러로 강제합니다 (`ColorSequence: requires at least 2 keypoints`, `... must start at time=0.0`,
+  `... must end at time=1.0`, `...: all keypoints must be ordered by time`). 같은 Time 이 연속되는 것은 허용됩니다.
+  `NumberSequence` 는 음수 봉투도 거부합니다 (`NumberSequence: envelope must be non-negative`).
+  따라서 실제 값으로는 `strictKeypointOrder` 의 실패 분기에 도달할 수 없습니다. 반면 시퀀스 밖에서 단독으로 만든
+  키포인트는 Time 범위(예: 1.5)도, 음수 봉투도 막지 않습니다.
+- **NumberRange**: `NumberRange.new(5, 1)` 은 `NumberRange: invalid range` 에러.
+- **Region3**: `Rect` 와 달리 뒤집힌 모서리를 정규화하지 않고 음수 `Size` 로 저장합니다
+  (`Region3.new((5,0,0), (0,5,5)).Size == (-5, 5, 5)`). 음수 축이 홀수 개면 `Size.X*Size.Y*Size.Z` 가 음수가 되어
+  `maxVolume` 만 준 스키마는 어떤 크기든 통과시킵니다.
+- **UDim / UDim2**: `Offset` 은 32비트 정수입니다. `UDim.new(0, 1.5).Offset == 1` (버림), `UDim.new(0, 3e9).Offset ==
+  -2147483648` (오버플로). 따라서 `integerOffsetOnly` 는 실제 값에 대해 항상 통과합니다.
+- **DateTime**: 지원 범위 밖은 생성 시점에 에러입니다 (`... UnixTimestampMillis should be between -17987443200000
+  and 253402300799999.`). 즉 `withinRobloxRange` 의 실패 분기는 실제 DateTime 으로 도달할 수 없습니다.
+  `DateTime.fromUnixTimestamp(1.5)` 는 소수 초를 버려 `UnixTimestampMillis == 1000`, `fromUnixTimestampMillis(1.7)` 은 1.
+  `DateTime.fromIsoDate` 는 실패 시 nil 을 돌려줍니다 (확인).
+- **Instance**: 존재하지 않는 클래스명에 대한 `IsA("NotARealClass")` 는 에러 없이 false 입니다.
+- **Enum / EnumItem**: `typeof(Enum) == "Enums"`, `typeof(Enum.Material) == "Enum"`, `tostring(Enum.Material) ==
+  "Material"`, `tostring(Enum.Material.Plastic) == "Enum.Material.Plastic"`, EnumItem 과 Enum 은 `==` 로 비교됩니다
+  (`Enum.Material:FromName("Wood") == Enum.Material.Wood`).

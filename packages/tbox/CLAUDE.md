@@ -46,8 +46,15 @@ luau test/run.luau          # 또는 직접 실행
   `require` 해 `Def.runtimeConstraintChecker(schema, mock)` 형태로 확인합니다 — 자세한 이유는
   아래 "실행 환경은 Roblox 가 아닙니다" 절을 보세요. 단, 클래스/Enum 판별처럼 `runtimeTypeChecker`
   안에서 `typeof(value)` 를 먼저 확인하는 분기는 mock 으로 우회할 수 없으므로(모의 테이블의
-  `typeof` 는 항상 `"table"`) 테스트하지 않습니다 (`test/schema/roblox/instance.luau`,
-  `enumItem.luau` 의 주석 참고).
+  `typeof` 는 항상 `"table"`) CLI 스위트에서는 테스트하지 않고, 아래 `test/studio/` 에서 실제 값으로 확인합니다.
+- `test/studio/` 는 **Roblox Studio 전용** 스위트입니다 (`test/run.luau` 는 require 하지 않음). 진입점
+  `test/studio/run.luau` 는 CLI 스위트 전체(`../run`)를 돌린 뒤 `test/studio/roblox/*` 에서 `test/schema/roblox/*` 의
+  mock 시나리오를 실제 Roblox 값으로 `Type:runtimeTypeCheck` → `Type:runtimeConstraintCheck` 순서로 다시 돌립니다
+  (`test/studio/common.luau` 의 `check`, Instance 는 부모 nil 로 만들고 반드시 Destroy 하는 `withInstances`).
+  실행은 `lune run scripts/studio-bundle <part>` 로 청크를 만들어 Studio MCP `execute_luau`(Edit) 에 넘깁니다.
+  MCP 프록시의 요청 크기 제한(약 100KB) 때문에 `all` 대신 `cli-core`, `cli-roblox`, `studio` 세 파트로 나눠
+  돌려야 합니다 (자세한 내용은 스크립트 머리말). src 버그로 보이지만 수정 여부가 정해지지 않은 기대값은
+  `Helper.pending` 으로 기록만 하고 실행 끝에 `[pending]` 으로 출력됩니다. 확인한 실제 동작은 `RobloxApi.md` 4절.
 - `default.project.json` 은 Rojo 프로젝트로 `src` 를 `ReplicatedStorage.TBox` 에 매핑합니다.
 - 정적 분석은 luau-lsp(new solver) 기준입니다 (저장소 루트 `.vscode/settings.json`).
 
@@ -216,9 +223,10 @@ Roblox 타입을 다룰 때 알아야 할 것:
   `Def.runtimeConstraintChecker(schema, mock)` 에 프로퍼티 모양만 흉내낸 테이블을 넘기면 됩니다.
   단, `Instance`/`EnumItem` 처럼 `runtimeTypeChecker` 안에서 클래스/Enum 을 판별하는 분기는
   `typeof(value)` 를 먼저 확인하고 나서야 도달하므로, mock 테이블(`typeof` 가 항상 `"table"`)로는
-  재현할 수 없습니다 — 이 분기는 테스트하지 않고 넘어가세요.
+  재현할 수 없습니다 — CLI 쪽에서는 넘어가고, 실제 값 검사는 `test/studio/roblox/` 에 추가하세요.
 - `src/schema/vector.luau` (네이티브 `vector`, `typeof == "vector"`) 와 `roblox/vector3.luau`
-  (Roblox `Vector3`, `typeof == "Vector3"`) 는 별개 타입입니다.
+  (Roblox `Vector3`, `typeof == "Vector3"`) 는 별개 타입입니다. 단 Roblox 안에서는 `typeof(vector.create(...))`
+  도 `"Vector3"` 라서 `TVector` 가 진짜 vector 를 거부합니다 (미결정 이슈, `test/schema/vector.luau` 의 pending 참고).
 - `Instance` 와 `EnumItem` 은 `TUnsafe<T>` 처럼 정적 타입을 명시적 타입 인자로 받습니다:
   `Type.Instance<<BasePart>>("BasePart")`, `Type.EnumItem<<Enum.Material>>(Enum.Material)`.
   런타임 판별에 필요한 정보(클래스명, Enum 객체)는 별도로 첫 인자로 넘깁니다.

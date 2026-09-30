@@ -118,3 +118,7 @@ print("[test] LuauBuild")
 require("./luauBuild")
 
 print("all schema tests passed.")
+
+-- Roblox Studio 에서는 test/studio/run.luau 가 이 파일을 ModuleScript 로 require 하는데, ModuleScript 는 값을
+-- 정확히 하나 반환해야 하므로 반환값을 둔다 (luau CLI 로 직접 실행할 때는 영향 없음).
+return true
