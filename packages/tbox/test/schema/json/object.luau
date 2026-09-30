@@ -49,6 +49,15 @@ useBox({
 Helper.expectEqual(Type:luauBuild(box), `\{ ["1aaa"]: number, hello: string, world: number }`)
 Helper.expectEqual(Type:format(box), `TObject<\{ ["1aaa"]: TNumber, hello: TString, world: TNumber }>`)
 
+-- 정적 타입으로는 막히지만 any 로 숫자 키가 섞여 들어와도, 정렬 중에 문자열과 숫자를 비교하다 터지지 않는다.
+-- format 은 타입 검사 실패 메시지 안에서도 불리므로 여기서 에러가 나면 검사 결과 자체를 읽을 수 없게 된다
+const mixedKeys = Type.Object({ [1] = Type.Number(), a = Type.String() } :: any)
+Helper.expectEqual(Type:format(mixedKeys), `TObject<\{ ["1"]: TNumber, a: TString }>`)
+Helper.expectFail(
+    Type:runtimeTypeCheck(mixedKeys, 5),
+    `table expected for TObject<\{ ["1"]: TNumber, a: TString }>, but got number`
+)
+
 -- NUL 이 들어간 프로퍼티 이름은 Luau 테이블 타입으로 표현할 수 없으므로 luauBuild 가 에러를 낸다.
 -- (format 은 사람이 읽는 용도라 파싱될 필요가 없으므로 이스케이프해서 그대로 보여준다)
 const nulKey = Type.Object({ ["a\0b"] = Type.Number() })
@@ -60,7 +69,7 @@ Helper.expectError(function()
 end, "object property name 'a\\000b' contains a NUL character and cannot be expressed as a luau type")
 Helper.expectEqual(Type:format(nulKey), `TObject<\{ ["a\\000b"]: TNumber }>`)
 
--- 키가 많아도, 어떤 순서로 넣었어도 같은 문자열이 나온다
+-- 키가 많아도 해시 순서가 아니라 정렬된 순서로 나온다
 const manyKeys = {}
 for _, key in { "zeta", "alpha", "mid", "b", "a", "Z", "_", "a1", "a_" } do
     manyKeys[key] = Type.Number()

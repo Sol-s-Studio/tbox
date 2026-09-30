@@ -31,7 +31,11 @@ const function sortedKeys(props: { [string]: Base.TSchema }): { string }
     for key in props do
         table.insert(keys, key)
     end
-    table.sort(keys)
+    -- 정적 타입은 문자열 키만 허용하지만 any 로 숫자 키가 섞여 들어올 수 있다. 기본 비교(<)는 문자열과 숫자를
+    -- 비교하지 못해 에러를 던지는데, formatter 는 에러 메시지 클로저 안에서도 불리므로 여기서 터지면 안 된다
+    table.sort(keys, function(a: any, b: any): boolean
+        return tostring(a) < tostring(b)
+    end)
     return keys
 end
 
@@ -45,7 +49,7 @@ const function luauBuilder(schema: TObject<any>): string
                 `object property name '{Util.escapeLuauString(key)}' contains a NUL character and cannot be expressed as a luau type`
             )
         end
-        local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
+        const ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
         table.insert(items, `{ident}: {defaultUntypedNamespace:luauBuild(schema.props[key])}`)
     end
 
@@ -55,7 +59,7 @@ end
 const function formatter(schema: TObject<any>): string
     const items: { string } = {}
     for _, key in sortedKeys(schema.props) do
-        local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
+        const ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
         table.insert(items, `{ident}: {defaultUntypedNamespace:format(schema.props[key])}`)
     end
 
