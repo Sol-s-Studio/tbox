@@ -15,7 +15,7 @@ Helper.expectFail(
 	"string too long. maximum allowed length is 5 characters"
 )
 
-const utf8Only = Type.String({ vaildUtf8Only = true })
+const utf8Only = Type.String({ validUtf8Only = true })
 Helper.expectOk(Type:runtimeConstraintCheck(utf8Only, "hello"))
 -- 0xFF 는 어떤 UTF-8 시퀀스로도 시작할 수 없는 바이트다
 Helper.expectFail(Type:runtimeConstraintCheck(utf8Only, string.char(0xFF)), "invalid UTF-8 string")

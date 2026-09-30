@@ -54,7 +54,7 @@ scripts/
 
 ## 남은 일 (우선순위 순)
 
-- [ ] **`src/util.luau` 직접 단위 테스트 없음.** `isVaildIdent`, `escapeLuauString`, `indent` 는
+- [ ] **`src/util.luau` 직접 단위 테스트 없음.** `isValidIdent`, `escapeLuauString`, `indent` 는
       다른 스키마 테스트를 통해 간접적으로만 exercise 됩니다. `test/util.luau` 를 만들어 엣지 케이스
       (예약어 식별자, 이스케이프 문자 조합, 여러 줄 indent)를 직접 확인하면 좋습니다.
 - [ ] **`src/registry.luau` 직접 단위 테스트 없음.** `TypeNamespace:clone()`, 커스텀 네임스페이스에

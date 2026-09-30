@@ -26,7 +26,7 @@ end
 const function luauBuilder(schema: TObject<any>): string
     const items: { string } = {}
     for key, inner in schema.props do
-        local ident = if Util.isVaildIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
+        local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
         table.insert(items, `{ident}: {defaultUntypedNamespace:luauBuild(inner)}`)
     end
 
@@ -36,7 +36,7 @@ end
 const function formatter(schema: TObject<any>): string
     const items: { string } = {}
     for key, inner in schema.props do
-        local ident = if Util.isVaildIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
+        local ident = if Util.isValidIdent(key) then key else `["{Util.escapeLuauString(key)}"]`
         table.insert(items, `{ident}: {defaultUntypedNamespace:format(inner)}`)
     end
 

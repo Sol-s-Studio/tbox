@@ -35,7 +35,7 @@ const reserved = {
     ["while"] = true,
 }
 
-function module.isVaildIdent(ident: string): boolean
+function module.isValidIdent(ident: string): boolean
     if string.match(ident, "^[%a_][%w_]*$") and not reserved[ident] then
         return true
     end

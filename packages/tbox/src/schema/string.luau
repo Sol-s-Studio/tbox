@@ -4,12 +4,12 @@ const Base = require("../base")
 const Types = require("../types")
 
 export type TString =
-    { maxLength: number?, minLength: number?, vaildUtf8Only: boolean? }
+    { maxLength: number?, minLength: number?, validUtf8Only: boolean? }
     & Base.TSchema
     & Types.InnerType<string>
     & Types.NamedType<"String">
 export type TStringOptions = Types.Merge<
-    { maxLength: number?, minLength: number?, vaildUtf8Only: boolean? },
+    { maxLength: number?, minLength: number?, validUtf8Only: boolean? },
     Base.TSchemaOptions
 >
 
@@ -18,7 +18,7 @@ const function String(options: TStringOptions?): TString
     return Base.SchemaFactory<<TString>>("String", options, {
         maxLength = options.maxLength,
         minLength = options.minLength,
-        vaildUtf8Only = options.vaildUtf8Only,
+        validUtf8Only = options.validUtf8Only,
     })
 end
 
@@ -52,7 +52,7 @@ const function runtimeConstraintChecker(schema: TString, value: string): (() -> 
             return `string too short. minimum allowed length is {schema.minLength} characters`
         end
     end
-    if schema.vaildUtf8Only then
+    if schema.validUtf8Only then
         const utf8Len = utf8.len(value)
         if utf8Len == nil then
             return function()

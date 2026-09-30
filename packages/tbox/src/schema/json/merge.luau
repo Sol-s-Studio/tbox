@@ -26,7 +26,7 @@ type function CheckMergeable(tupty: type): type
 
     for _, ty in head do
         if not ty:is("singleton") then
-            print("unexpected tbox error. TMerge input tuple is not vaild")
+            print("unexpected tbox error. TMerge input tuple is not valid")
             hasError = true
             continue
         end
