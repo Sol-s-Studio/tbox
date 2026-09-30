@@ -6,6 +6,10 @@
 -- require 대상은 항상 문자열 리터럴로 명시한다 (동적 경로는 이 luau 빌드의 require 캐시에서
 -- "could not reset to requiring context (ambiguous)" 오류를 일으킨다).
 -- 새 스키마 타입을 추가하면 이 목록에도 동일한 순서로 추가할 것.
+-- 스키마가 공통으로 기대는 내부 모듈(util 등) 테스트를 먼저 돌려, 실패 원인을 좁히기 쉽게 한다.
+
+print("[test] Util")
+require("./util")
 
 print("[test] Any")
 require("./schema/any")
