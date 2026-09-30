@@ -37,10 +37,9 @@ Helper.expectFail(
     "time too big. maximum allowed time is 0.8"
 )
 
--- Time 은 32비트 float 로 저장된다. 그래서 ColorSequenceKeypoint.new(0.8, ...) 의 Time 은 0.800000011920929 로,
--- 옵션으로 준 64비트 0.8 보다 크다. 사용자는 "0.8 은 허용 범위 안" 이라고 기대하겠지만 실제로는 경계에서 거부된다.
-Helper.pending("ColorSequenceKeypoint.new(0.8) should satisfy maxTime = 0.8 (Time is stored as float32)", function()
-    Helper.expectOk(Common.check(schema, ColorSequenceKeypoint.new(0.8, white)))
-end)
+-- Time 은 32비트 float 로 저장된다. 그래서 ColorSequenceKeypoint.new(0.8, ...) 의 Time 은 0.800000011920929 로
+-- 64비트 0.8 보다 크다. src 는 경계도 float32 로 맞춰 비교하므로 경계값 그 자체는 허용되어야 한다.
+Helper.expectEqual(ColorSequenceKeypoint.new(0.8, white).Time > 0.8, true)
+Helper.expectOk(Common.check(schema, ColorSequenceKeypoint.new(0.8, white)))
 
 return true

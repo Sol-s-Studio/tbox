@@ -2,6 +2,8 @@
 
 const Base = require("../../base")
 const Types = require("../../types")
+-- 이 타입의 필드는 float32 로 저장되므로 숫자 경계를 Util.toFloat32 로 맞춰 비교한다 (util.luau 참고)
+const Util = require("../../util")
 
 export type TNumberSequence = {
     minKeypoints: number?,
@@ -99,19 +101,19 @@ const function runtimeConstraintChecker(schema: TNumberSequence, value: NumberSe
     for index = 1, count do
         const keypoint = keypoints[index]
 
-        if schema.maxValue and keypoint.Value > schema.maxValue then
+        if schema.maxValue and keypoint.Value > Util.toFloat32(schema.maxValue) then
             return function()
                 return `NumberSequence keypoint {index} Value too big. maximum allowed value is {schema.maxValue}`
             end
         end
 
-        if schema.minValue and keypoint.Value < schema.minValue then
+        if schema.minValue and keypoint.Value < Util.toFloat32(schema.minValue) then
             return function()
                 return `NumberSequence keypoint {index} Value too small. minimum allowed value is {schema.minValue}`
             end
         end
 
-        if schema.maxEnvelope and keypoint.Envelope > schema.maxEnvelope then
+        if schema.maxEnvelope and keypoint.Envelope > Util.toFloat32(schema.maxEnvelope) then
             return function()
                 return `NumberSequence keypoint {index} Envelope too big. maximum allowed value is {schema.maxEnvelope}`
             end

@@ -148,6 +148,22 @@ expectRoundTrip(table.concat(allBytes))
 expectRoundTrip('\\"\\\\"\\')
 
 ----------------------------------------------------------------------------------------------------
+-- toFloat32
+----------------------------------------------------------------------------------------------------
+
+-- float32 로 정확히 표현되는 값은 그대로다
+Helper.expectEqual(Util.toFloat32(0), 0)
+Helper.expectEqual(Util.toFloat32(0.5), 0.5)
+Helper.expectEqual(Util.toFloat32(-1024), -1024)
+-- 그렇지 않은 값은 가장 가까운 float32 로 반올림된다 (Roblox 가 NumberRange 등에 저장하는 값과 같다)
+Helper.expectEqual(Util.toFloat32(0.1), 0.10000000149011612)
+Helper.expectEqual(Util.toFloat32(0.8), 0.800000011920929)
+-- 무한대와 NaN 도 보존된다
+Helper.expectEqual(Util.toFloat32(math.huge), math.huge)
+const nan = Util.toFloat32(0 / 0)
+Helper.expectTrue(nan ~= nan, "toFloat32 should keep nan")
+
+----------------------------------------------------------------------------------------------------
 -- indent
 ----------------------------------------------------------------------------------------------------
 

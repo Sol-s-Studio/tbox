@@ -3,6 +3,7 @@
 const Type = require("../../../src")
 const Helper = require("../../helper")
 const Def = require("../../../src/schema/roblox/numberRange")
+const Util = require("../../../src/util")
 
 Helper.expectFail(Type:runtimeTypeCheck(Type.NumberRange(), 123), "NumberRange expected, but got number")
 Helper.expectEqual(Type:luauBuild(Type.NumberRange()), "NumberRange")
@@ -30,6 +31,15 @@ Helper.expectFail(
 Helper.expectFail(
     Def.runtimeConstraintChecker(schema, { Min = 1, Max = 1.5 }),
     "NumberRange too narrow. minimum allowed span (Max - Min) is 1"
+)
+
+-- 실제 Min/Max 는 float32 로 저장된다 (NumberRange.new(0, 0.1).Max == 0.10000000149011612). 경계를 float32 로
+-- 맞춰 비교하므로 경계값으로 만든 범위는 통과하고, float32 로 한 칸 위인 값은 거부된다
+const tight = Type.NumberRange({ min = 0.1, max = 0.1 })
+Helper.expectOk(Def.runtimeConstraintChecker(tight, { Min = Util.toFloat32(0.1), Max = Util.toFloat32(0.1) }))
+Helper.expectFail(
+    Def.runtimeConstraintChecker(tight, { Min = Util.toFloat32(0.1), Max = Util.toFloat32(0.1) + 1e-8 }),
+    "NumberRange.Max too big. maximum allowed value is 0.1"
 )
 
 return true

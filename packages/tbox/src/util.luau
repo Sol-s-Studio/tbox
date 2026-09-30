@@ -58,6 +58,16 @@ function module.escapeLuauString(value: string): string
     )
 end
 
+-- number(64비트 double)를 32비트 float 로 반올림한 값을 돌려준다. Roblox 는 NumberRange, 시퀀스 키포인트,
+-- UDim.Scale 같은 필드를 float32 로 저장해서 NumberRange.new(0, 0.1).Max 가 0.10000000149011612 가 된다
+-- (Studio 에서 확인, RobloxApi.md 4절). 사용자가 옵션으로 준 경계도 같은 표현으로 맞춰 비교해야
+-- "0.1 까지 허용" 하는 스키마가 0.1 로 만든 값을 거부하지 않는다.
+const float32Buffer = buffer.create(4)
+function module.toFloat32(value: number): number
+    buffer.writef32(float32Buffer, 0, value)
+    return buffer.readf32(float32Buffer, 0)
+end
+
 function module.indent(str: string): string
     return "  " .. string.gsub(str, "\n", "\n  ")
 end

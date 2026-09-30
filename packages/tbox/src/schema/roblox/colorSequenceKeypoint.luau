@@ -2,6 +2,8 @@
 
 const Base = require("../../base")
 const Types = require("../../types")
+-- 이 타입의 필드는 float32 로 저장되므로 숫자 경계를 Util.toFloat32 로 맞춰 비교한다 (util.luau 참고)
+const Util = require("../../util")
 
 export type TColorSequenceKeypoint =
     { minTime: number?, maxTime: number? }
@@ -37,13 +39,13 @@ const function runtimeTypeChecker(_schema: TColorSequenceKeypoint, value: any): 
 end
 
 const function runtimeConstraintChecker(schema: TColorSequenceKeypoint, value: ColorSequenceKeypoint): (() -> string)?
-    if schema.maxTime and value.Time > schema.maxTime then
+    if schema.maxTime and value.Time > Util.toFloat32(schema.maxTime) then
         return function()
             return `time too big. maximum allowed time is {schema.maxTime}`
         end
     end
 
-    if schema.minTime and value.Time < schema.minTime then
+    if schema.minTime and value.Time < Util.toFloat32(schema.minTime) then
         return function()
             return `time too small. minimum allowed time is {schema.minTime}`
         end

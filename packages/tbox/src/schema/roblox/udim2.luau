@@ -2,6 +2,8 @@
 
 const Base = require("../../base")
 const Types = require("../../types")
+-- 이 타입의 필드는 float32 로 저장되므로 숫자 경계를 Util.toFloat32 로 맞춰 비교한다 (util.luau 참고)
+const Util = require("../../util")
 
 -- UDim2 의 X, Y 는 서로 독립적인 UDim 이므로 수치 범위 제약은 축별로 분리한다.
 -- (예: 가로는 스케일로 꽉 채우고 세로만 오프셋 상한을 두는 UI 가 흔하다)
@@ -98,13 +100,13 @@ const function checkAxis(
         end
     end
 
-    if maxScale and value.Scale > maxScale then
+    if maxScale and value.Scale > Util.toFloat32(maxScale) then
         return function()
             return `{prefix} scale too big. maximum allowed {prefix} scale is {maxScale}`
         end
     end
 
-    if minScale and value.Scale < minScale then
+    if minScale and value.Scale < Util.toFloat32(minScale) then
         return function()
             return `{prefix} scale too small. minimum allowed {prefix} scale is {minScale}`
         end

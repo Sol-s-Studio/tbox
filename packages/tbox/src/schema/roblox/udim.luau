@@ -2,6 +2,8 @@
 
 const Base = require("../../base")
 const Types = require("../../types")
+-- 이 타입의 필드는 float32 로 저장되므로 숫자 경계를 Util.toFloat32 로 맞춰 비교한다 (util.luau 참고)
+const Util = require("../../util")
 
 export type TUDim = {
     minScale: number?,
@@ -73,13 +75,13 @@ const function runtimeConstraintChecker(schema: TUDim, value: UDim): (() -> stri
         end
     end
 
-    if schema.maxScale and value.Scale > schema.maxScale then
+    if schema.maxScale and value.Scale > Util.toFloat32(schema.maxScale) then
         return function()
             return `scale too big. maximum allowed scale is {schema.maxScale}`
         end
     end
 
-    if schema.minScale and value.Scale < schema.minScale then
+    if schema.minScale and value.Scale < Util.toFloat32(schema.minScale) then
         return function()
             return `scale too small. minimum allowed scale is {schema.minScale}`
         end

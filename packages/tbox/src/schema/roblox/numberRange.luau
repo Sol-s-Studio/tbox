@@ -2,6 +2,8 @@
 
 const Base = require("../../base")
 const Types = require("../../types")
+-- 이 타입의 필드는 float32 로 저장되므로 숫자 경계를 Util.toFloat32 로 맞춰 비교한다 (util.luau 참고)
+const Util = require("../../util")
 
 -- Min/Max 는 32비트 float 로 저장되므로, 아주 큰 정수는 정밀도가 손실될 수 있다.
 export type TNumberRange =
@@ -51,13 +53,13 @@ const function runtimeConstraintChecker(schema: TNumberRange, value: NumberRange
         end
     end
 
-    if schema.max and value.Max > schema.max then
+    if schema.max and value.Max > Util.toFloat32(schema.max) then
         return function()
             return `NumberRange.Max too big. maximum allowed value is {schema.max}`
         end
     end
 
-    if schema.min and value.Min < schema.min then
+    if schema.min and value.Min < Util.toFloat32(schema.min) then
         return function()
             return `NumberRange.Min too small. minimum allowed value is {schema.min}`
         end

@@ -272,9 +272,14 @@ mock 테스트(`test/schema/roblox/`)가 가정한 것과 다른 부분 위주�
   `UDim.Scale` 은 float32 입니다. `Color3.new(0.9, 0, 0).R == 0.8999999761581421`,
   `NumberSequenceKeypoint.new(0, 0, 0.2).Envelope == 0.20000000298023224`. 그래서
   (1) 값을 그대로 보여주는 에러 메시지는 mock 버전과 문구가 달라지고,
-  (2) 스키마 옵션을 64비트 숫자로 주면 경계값에서 어긋납니다: `ColorSequenceKeypoint.new(0.8, c)` 는
-  `maxTime = 0.8` 에 걸리고, `NumberRange.new(0, 0.1)` 은 `max = 0.1` 에 걸립니다. (옵션을 같은 Roblox 타입으로 주는
-  `Vector3`/`Color3` 의 min/max 는 양쪽이 모두 float32 라 어긋나지 않습니다.)
+  (2) 스키마 옵션을 64비트 숫자로 주면 경계값에서 어긋납니다: `ColorSequenceKeypoint.new(0.8, c).Time` 은
+  `0.8` 보다 크고, `NumberRange.new(0, 0.1).Max` 는 `0.1` 보다 큽니다. 그래서 src 는 이런 필드(키포인트
+  Time/Value/Envelope, NumberRange Min/Max, UDim/UDim2 Scale)를 숫자 옵션과 비교할 때 옵션을 `Util.toFloat32` 로
+  반올림해서 비교합니다. Studio 에서 이 6개 필드 모두 저장값이 `toFloat32(경계)` 와 정확히 같음을 확인했습니다.
+  (옵션을 같은 Roblox 타입으로 주는 `Vector3`/`Color3` 의 min/max 는 양쪽이 모두 float32 라 원래 어긋나지 않습니다.)
+  **남은 한계**: span(`Max - Min`), magnitude, `Rect.Width/Height`, 부피처럼 float32 값들로 계산한 파생값은 계산
+  과정에서 오차가 섞이므로 경계를 반올림해도 정확히 맞는다는 보장이 없습니다. 경계에 딱 맞는 값이 중요하면
+  여유를 두세요.
 - **nan 은 그대로 저장**: `Vector2/Vector3/Color3/CFrame` 생성자 모두 nan 성분을 거부하지 않습니다. `Color3.new` 는
   0~1 밖 값도 그대로 저장합니다. 즉 `notNan`/`clampedOnly` 는 실제로 의미가 있습니다.
 - **CFrame**: 12성분 `CFrame.new` 와 4인자 `CFrame.fromMatrix` 는 스케일/거울상 회전을 그대로 받습니다.

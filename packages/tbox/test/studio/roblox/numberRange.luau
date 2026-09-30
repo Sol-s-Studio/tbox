@@ -40,10 +40,9 @@ Helper.expectError(function()
     NumberRange.new(5, 1)
 end, "NumberRange: invalid range")
 
--- Min/Max 는 32비트 float 로 저장된다. NumberRange.new(0, 0.1).Max 는 0.10000000149011612 라서
--- 옵션으로 준 64비트 0.1 보다 크다. "0.1 까지 허용" 이라는 스키마가 바로 그 0.1 로 만든 범위를 거부한다.
-Helper.pending("NumberRange.new(0, 0.1) should satisfy max = 0.1 (Min/Max are stored as float32)", function()
-    Helper.expectOk(Common.check(Type.NumberRange({ max = 0.1 }), NumberRange.new(0, 0.1)))
-end)
+-- Min/Max 는 32비트 float 로 저장된다. NumberRange.new(0, 0.1).Max 는 0.10000000149011612 라서 64비트 0.1 보다
+-- 크다. src 는 경계도 float32 로 맞춰 비교하므로 "0.1 까지 허용" 하는 스키마가 0.1 로 만든 범위를 받아야 한다.
+Helper.expectEqual(NumberRange.new(0, 0.1).Max > 0.1, true)
+Helper.expectOk(Common.check(Type.NumberRange({ max = 0.1 }), NumberRange.new(0, 0.1)))
 
 return true
