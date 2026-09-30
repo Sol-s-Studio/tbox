@@ -2,7 +2,7 @@
 
 -- 등록된 모든 스키마 타입의 luauBuild 결과가 실제 Luau 타입 문법으로 파싱되는지 확인한다.
 -- 각 test/schema/* 는 기대 문자열만 비교하므로, 문자열이 틀린 모양이어도 기대값을 같이 틀리게 적으면
--- 통과해버린다. 여기서는 loadstring 으로 파서에 직접 넣어 본다 (Helper.expectParsableType).
+-- 통과해버린다. 여기서는 실제 파서에 직접 넣어 본다 (Helper.expectParsableType).
 -- 새 스키마 타입을 추가하면 아래 samples 에도 추가해야 한다 — 빠뜨리면 마지막 커버리지 검사가 실패한다.
 
 const Helper = require("./helper")

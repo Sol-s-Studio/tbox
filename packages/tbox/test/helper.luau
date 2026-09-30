@@ -36,10 +36,26 @@ function Helper.expectError(fn: () -> (), expected: string)
     end
 end
 
--- luauBuild 결과가 Luau 타입 문법으로 파싱되는지 확인한다. loadstring 은 파싱(컴파일)만 하므로
--- 이름 해석이나 타입 검사는 하지 않는다 — Roblox 타입 이름(Vector3 등)이 이 환경에 없어도 통과한다.
+-- 소스 문자열을 컴파일해 함수로 돌려준다. 실패하면 nil 과 컴파일 에러 메시지를 돌려준다 (loadstring 과 같은 모양).
+-- 이 스위트는 luau CLI, Lute, Roblox Studio 에서 모두 돌아야 하는데, Lute 에는 전역 loadstring 이 없어서
+-- 대신 @lute/luau 의 compile/load 를 쓴다 (compile 은 항상 성공하고 문법 에러는 load 에서 난다).
+function Helper.loadChunk(source: string): ((...any) -> ...any, string?)
+    const globalLoadstring: any = (_G :: any).loadstring or (loadstring :: any)
+    if globalLoadstring then
+        return (globalLoadstring :: any)(source)
+    end
+    const luau = (require :: any)("@lute/luau")
+    const ok, result = pcall(luau.load, luau.compile(source), "chunk")
+    if not ok then
+        return nil :: any, tostring(result)
+    end
+    return result, nil
+end
+
+-- luauBuild 결과가 Luau 타입 문법으로 파싱되는지 확인한다. 컴파일만 하므로 이름 해석이나 타입 검사는
+-- 하지 않는다 — Roblox 타입 이름(Vector3 등)이 이 환경에 없어도 통과한다.
 function Helper.expectParsableType(source: string)
-    const chunk, err = loadstring(`type T = {source}\nreturn nil`)
+    const chunk, err = Helper.loadChunk(`type T = {source}\nreturn nil`)
     if not chunk then
         error(`generated luau type does not parse:\n  {source}\n  {err}`, 2)
     end

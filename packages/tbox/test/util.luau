@@ -3,14 +3,14 @@
 -- src/util.luau 직접 단위 테스트. util 함수들은 스키마 테스트에서도 간접적으로 실행되지만,
 -- 거기서는 평범한 입력만 지나가므로 예약어/제어문자/여러 줄 같은 엣지 케이스는 여기서 직접 확인한다.
 -- 결과가 Luau 소스로 쓰이는 함수(isValidIdent, escapeLuauString)는 기대값을 손으로 적는 것에 더해
--- loadstring 으로 실제 Luau 파서에 넣어 보고, 파서와 판단이 일치하는지까지 확인한다.
+-- Helper.loadChunk 로 실제 Luau 파서에 넣어 보고, 파서와 판단이 일치하는지까지 확인한다.
 
 const Util = require("../src/util")
 const Helper = require("./helper")
 
 -- 주어진 소스가 Luau 파서를 통과하는가
 const function compiles(source: string): boolean
-    return (loadstring(source)) ~= nil
+    return (Helper.loadChunk(source)) ~= nil
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ end
 -- 이스케이프 결과를 "..." 로 감싸 Luau 로 읽었을 때 원래 문자열이 그대로 복원되는지 확인한다
 const function expectRoundTrip(value: string)
     const escaped = Util.escapeLuauString(value)
-    const chunk, err = loadstring(`return "{escaped}"`)
+    const chunk, err = Helper.loadChunk(`return "{escaped}"`)
     if not chunk then
         error(`escaped string does not compile: "{escaped}"\n  {err}`, 2)
     end
