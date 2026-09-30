@@ -11,6 +11,12 @@
 print("[test] Util")
 require("./util")
 
+print("[test] Base")
+require("./base")
+
+print("[test] Registry")
+require("./registry")
+
 print("[test] Any")
 require("./schema/any")
 

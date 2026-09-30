@@ -57,9 +57,9 @@ scripts/
 - [x] **`src/util.luau` 직접 단위 테스트** — `test/util.luau` 추가. 생성된 소스를 `loadstring` 으로
       실제 Luau 파서에 넣어 교차 검증합니다. 이 과정에서 `escapeLuauString` 이 NUL 등 제어문자를
       이스케이프하지 않아 `luauBuild` 가 파싱 불가능한 타입을 내던 버그를 찾아 고쳤습니다.
-- [ ] **`src/registry.luau` 직접 단위 테스트 없음.** `TypeNamespace:clone()`, 커스텀 네임스페이스에
-      `registerType` 했을 때 기본 네임스페이스가 오염되지 않는지, 등록 안 된 tag 조회 시
-      에러 메시지가 맞는지 등은 테스트되지 않았습니다.
+- [x] **`src/registry.luau` 직접 단위 테스트** — `test/registry.luau` (+ `src/base.luau` 용
+      `test/base.luau`) 추가. clone/registerType 격리, 조회 실패 에러, "재귀는 항상 기본 네임스페이스"
+      한계를 고정했습니다. 조회 실패 에러 메시지를 코드 스타일에 맞게 소문자 시작으로 바꿨습니다.
 - [ ] **컨테이너 타입의 더 깊은 중첩 케이스.** 현재 테스트는 각 타입을 1~2단계 정도만 조합합니다.
       `Union<Union<...>>`, `Array<Array<...>>`, `Object` 안에 `Merge`, `Map` 의 value 로 `Object`
       등 더 깊은 중첩에서 에러 메시지 들여쓰기(`Util.indent`)가 누적되는지 확인하는 테스트가 없습니다.

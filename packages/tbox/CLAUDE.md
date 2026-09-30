@@ -180,7 +180,7 @@ return Base.TypeDefFactory("Foo", Foo, {
 
 주의: `SchemaFactory` 의 첫 인자(tag), `TypeDefFactory` 의 첫 인자(typeName), `NamedType<...>` 의 문자열
 **세 개가 전부 같아야 합니다.** 하나라도 어긋나면 런타임에
-`Type schema 'X' does not exist in this type namespace` 로 터집니다.
+`type schema 'X' does not exist in this type namespace` 로 터집니다.
 
 그다음 `src/init.luau` 의 **네 곳**을 모두 수정합니다.
 

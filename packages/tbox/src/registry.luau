@@ -23,7 +23,7 @@ export type TypeNamespace = {
 const function getTypeDef(self: TypeNamespace, tag: string): Base.TypeDef<any>
     const def = (self :: TypeNamespaceInternal)._types[tag]
     if not def then
-        error(`Type schema '{tag}' does not exist in this type namespace '{self.namespaceName}'`)
+        error(`type schema '{tag}' does not exist in this type namespace '{self.namespaceName}'`)
     end
     return def
 end

@@ -23,6 +23,19 @@ function Helper.expectOk(check: (() -> string)?)
     end
 end
 
+-- 클로저 대신 error() 로 실패하는 API(네임스페이스 조회 등)용. fn 이 에러를 던지고, 그 메시지가
+-- expected 로 끝나는지 확인한다. error() 가 앞에 붙이는 "파일:줄: " 위치 정보는 비교하지 않는다.
+function Helper.expectError(fn: () -> (), expected: string)
+    const ok, err = pcall(fn)
+    if ok then
+        error(`expected an error (message: "{expected}"), but it succeeded`, 2)
+    end
+    const message = tostring(err)
+    if string.sub(message, -#expected) ~= expected then
+        error(`expected error message ending with:\n  {expected}\nbut got:\n  {message}`, 2)
+    end
+end
+
 -- 두 값이 정확히 같은지 확인한다 (luauBuild/format 결과 비교용)
 function Helper.expectEqual(actual: any, expected: any)
     if actual ~= expected then
