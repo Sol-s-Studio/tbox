@@ -65,12 +65,14 @@ scripts/
 2. `TObject`/`TMerge` 의 `luauBuild`/`format` 이 props 해시 순회 순서를 그대로 써서, 필드 순서가
    환경(Luau 버전, Roblox vs CLI)마다 달라질 수 있었습니다. 이제 키를 정렬해 출력합니다 (`tostring`
    기준 비교 — `any` 로 숫자 키가 섞여도 정렬 중에 터지지 않도록. 독립 리뷰에서 잡은 회귀입니다).
-3. Luau 는 테이블 타입 프로퍼티 이름에 NUL 을 (이스케이프해도) 허용하지 않습니다. 그런 키를 가진
+3. `Type.Union(Type.Tuple())` (멤버 0개) 는 `luauBuild` 가 빈 문자열을 냈습니다. 의미상 never 인데
+   Never 는 의도적으로 제외된 개념이라, 사용자 결정에 따라 이제 생성 시점에 에러를 냅니다.
+4. Luau 는 테이블 타입 프로퍼티 이름에 NUL 을 (이스케이프해도) 허용하지 않습니다. 그런 키를 가진
    `TObject` 의 `luauBuild` 는 이제 명확한 에러를 냅니다.
-4. `vaild` 오타를 `valid` 로 고쳤습니다 — 공개 옵션 `TString.validUtf8Only` 포함 (breaking).
-5. stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 패키지 안에서 돌려서 `test/`, `scripts/` 가
+5. `vaild` 오타를 `valid` 로 고쳤습니다 — 공개 옵션 `TString.validUtf8Only` 포함 (breaking).
+6. stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 패키지 안에서 돌려서 `test/`, `scripts/` 가
    기본 설정(탭)으로 포매팅돼 있던 것을 루트 설정으로 복구했습니다.
-6. pesde 0.7 은 스크립트에 런타임 명시가 필요해 `pesde run test` 가 깨져 있었습니다. 이제
+7. pesde 0.7 은 스크립트에 런타임 명시가 필요해 `pesde run test` 가 깨져 있었습니다. 이제
    `pesde.toml` 에 `runtime = "lune"` + `[engines] lune = "^0.10.5"` 로 고정합니다 (`~/.pesde/bin`
    이 PATH 에 있어야 함).
 
@@ -85,8 +87,6 @@ scripts/
 
 독립 리뷰에서 나왔지만 이번 범위 밖이라 남겨둔 것 (모두 이 작업 이전부터 있던 동작):
 
-- `Type.Union(Type.Tuple())` (분기 0개) 의 `luauBuild` 가 빈 문자열을 내서 파싱되지 않습니다. 의미상
-  `never` 이지만 `Never` 는 의도적으로 제외된 개념이라 어떻게 다룰지(생성 시 에러 등)는 결정이 필요합니다.
 - 숫자 등 문자열/불리언이 아닌 `Singleton` 은 `luauBuild` 가 `unknown` 을 냅니다 (Luau 에 숫자 싱글톤
   타입이 없음). `Instance` 의 클래스명과 `Unsafe` 의 `luauType` 은 사용자 입력을 그대로 출력합니다.
 - `TObject` 의 `inspectInner` 는 여전히 해시 순서로 돌려줍니다 (지금은 문자열화하는 곳이 없음).

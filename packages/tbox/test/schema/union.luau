@@ -34,4 +34,9 @@ Helper.expectFail(Type:runtimeConstraintCheck(constrainedUnion, 11), "number too
 
 Helper.expectEqual(Type:luauBuild(unionTest), "(number) | ((string)?)")
 
+-- 멤버가 없는 union 은 never 에 해당하므로 만드는 시점에 거부한다
+Helper.expectError(function()
+    Type.Union(Type.Tuple())
+end, "union requires at least one member")
+
 return true

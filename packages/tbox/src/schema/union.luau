@@ -19,6 +19,11 @@ export type TUnionOptions = Types.Merge<{}, Base.TSchemaOptions>
 -- 명시적으로 요소를 추출합니다. (만약 pack 에 대해 infer 된다면 다른 후행 함수 인자 요소가 오염됩니다)
 -- const function Union<Components...>(tup: Types.Tuple<Components...>, options: TUnionOptions?): TUnion<Components...>
 const function Union<Tuple>(tup: Tuple, options: TUnionOptions?): TUnion<Tuple>
+    -- 멤버가 없는 union 은 어떤 값도 받지 않는 never 에 해당한다. Luau 타입으로는 빈 문자열이 되어 파싱되지
+    -- 않고, Never 는 의도적으로 두지 않은 개념이므로(README 참고) 만드는 시점에 거부한다.
+    if (tup :: any).n == 0 then
+        error("union requires at least one member", 2)
+    end
     options = options or ({} :: TUnionOptions)
     return Base.SchemaFactory<<TUnion<Tuple>>>("Union", options, {
         components = tup,
