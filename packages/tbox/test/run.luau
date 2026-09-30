@@ -110,4 +110,11 @@ require("./schema/roblox/enum")
 print("[test] EnumItem")
 require("./schema/roblox/enumItem")
 
+-- 개별 타입 테스트가 모두 통과한 뒤에, 여러 타입을 가로지르는 테스트를 돌린다
+print("[test] Nested")
+require("./nested")
+
+print("[test] LuauBuild")
+require("./luauBuild")
+
 print("all schema tests passed.")

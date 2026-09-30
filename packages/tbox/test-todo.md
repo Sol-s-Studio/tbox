@@ -4,7 +4,7 @@
 현재 상태와 남은 일을 정리한 것입니다. 작업 배경/설계 결정은 `packages/tbox/CLAUDE.md` 의
 "실행 / 검증" 절에도 반영되어 있으니 먼저 그쪽을 읽으세요. 이 파일은 다 끝나면 지워도 됩니다.
 
-## 현재 상태: 1차 완료, 전부 통과
+## 현재 상태: 2차 완료, 전부 통과
 
 `test.luau` (단일 파일) 를 `src/schema/` 구조를 1:1로 미러링하는 `test/` 디렉터리로 쪼갰고,
 `src/schema/` 아래 **모든 리프 파일(31개)에 대응하는 테스트가 존재하며 전부 통과**합니다.
@@ -21,8 +21,13 @@ pesde run test          # scripts/test.luau 브릿지를 거쳐 동일한 걸 �
 
 ```
 test/
-  run.luau            진입점. 문자열 리터럴로 test/schema/* 를 순서대로 require
-  helper.luau         expectOk/expectFail/expectEqual/expectTrue 어서션 (실패 시 error())
+  run.luau            진입점. 문자열 리터럴로 아래 파일들을 순서대로 require
+  helper.luau         expectOk/expectFail/expectError/expectEqual/expectTrue/expectParsableType (실패 시 error())
+  util.luau           src/util.luau 단위 테스트 (loadstring 으로 실제 파서와 교차 검증)
+  base.luau           src/base.luau 단위 테스트 (SchemaFactory, TypeDefFactory 기본 훅)
+  registry.luau       src/registry.luau 단위 테스트 (네임스페이스 격리, 조회 실패, 재귀 한계)
+  nested.luau         컨테이너 여러 단계 중첩: 출력, 에러 들여쓰기 누적, canBeNil/union 분기 전달
+  luauBuild.luau      등록된 모든 타입의 luauBuild 결과가 실제로 파싱되는지 (+ 샘플 커버리지 검사)
   schema/             src/schema/ 를 1:1로 미러링 (any, boolean, number, string, union, map, ...)
     json/             object, array, merge
     roblox/            vector2, vector3, cframe, color3, ... (17개, RobloxApi.md 목록과 동일)
@@ -52,6 +57,30 @@ scripts/
    `test/schema/roblox/instance.luau`, `enumItem.luau` 는 이 부분을 의도적으로 테스트하지 않고
    주석으로 이유를 남겼습니다. "커버리지 채우려고" mock 을 억지로 만들지 마세요 — 안 됩니다.
 
+## 2차 세션(2026-09-30)에서 발견하고 고친 것
+
+1. `Util.escapeLuauString` 이 NUL 등 제어문자를 이스케이프하지 않아, NUL 이 든 싱글톤/키의
+   `luauBuild` 결과가 파싱되지 않았습니다. 이제 항상 세 자리 `\ddd` 로 이스케이프합니다.
+2. `TObject`/`TMerge` 의 `luauBuild`/`format` 이 props 해시 순회 순서를 그대로 써서, 필드 순서가
+   환경(Luau 버전, Roblox vs CLI)마다 달라질 수 있었습니다. 이제 키를 정렬해 출력합니다.
+3. Luau 는 테이블 타입 프로퍼티 이름에 NUL 을 (이스케이프해도) 허용하지 않습니다. 그런 키를 가진
+   `TObject` 의 `luauBuild` 는 이제 명확한 에러를 냅니다.
+4. `vaild` 오타를 `valid` 로 고쳤습니다 — 공개 옵션 `TString.validUtf8Only` 포함 (breaking).
+5. stylua 는 현재 디렉터리의 `stylua.toml` 만 찾습니다. 패키지 안에서 돌려서 `test/`, `scripts/` 가
+   기본 설정(탭)으로 포매팅돼 있던 것을 루트 설정으로 복구했습니다.
+6. pesde 0.7 은 스크립트에 런타임 명시가 필요해 `pesde run test` 가 깨져 있었습니다. 이제
+   `pesde.toml` 에 `runtime = "lune"` + `[engines] lune = "^0.10.5"` 로 고정합니다 (`~/.pesde/bin`
+   이 PATH 에 있어야 함).
+
+고치지 않고 남겨둔 것:
+
+- 여러 필드/요소가 동시에 실패할 때 **어느 것이 에러로 보고될지는 순회 순서에 달려 있습니다**
+  (Object 의 값 순회, 필수 필드 누락, Array/Map 요소). 런타임 검사는 union 분기 선택에도 쓰이는
+  hot path 라 정렬하지 않았습니다. 테스트는 실패 지점이 하나뿐인 값으로 작성하세요.
+- `luau-analyze` 로 테스트 파일을 검사하면 `StaticTuple ... unsupported type pack type` 같은 에러가
+  Union/Merge 를 쓰는 곳마다 나옵니다. 기존 파일에서도 똑같이 나오는 것으로, `luau-analyze` 가
+  `.vscode/settings.json` 의 luau-lsp fflag 를 쓰지 않아서 생기는 노이즈입니다.
+
 ## 남은 일 (우선순위 순)
 
 - [x] **`src/util.luau` 직접 단위 테스트** — `test/util.luau` 추가. 생성된 소스를 `loadstring` 으로
@@ -60,9 +89,9 @@ scripts/
 - [x] **`src/registry.luau` 직접 단위 테스트** — `test/registry.luau` (+ `src/base.luau` 용
       `test/base.luau`) 추가. clone/registerType 격리, 조회 실패 에러, "재귀는 항상 기본 네임스페이스"
       한계를 고정했습니다. 조회 실패 에러 메시지를 코드 스타일에 맞게 소문자 시작으로 바꿨습니다.
-- [ ] **컨테이너 타입의 더 깊은 중첩 케이스.** 현재 테스트는 각 타입을 1~2단계 정도만 조합합니다.
-      `Union<Union<...>>`, `Array<Array<...>>`, `Object` 안에 `Merge`, `Map` 의 value 로 `Object`
-      등 더 깊은 중첩에서 에러 메시지 들여쓰기(`Util.indent`)가 누적되는지 확인하는 테스트가 없습니다.
+- [x] **컨테이너 타입의 더 깊은 중첩 케이스** — `test/nested.luau` 추가. 들여쓰기 누적(12단계까지),
+      union 속 union, canBeNil 전달, union 분기 선택과 Object 공변성의 상호작용을 고정했습니다.
+      함께 `test/luauBuild.luau` 로 모든 타입의 출력이 파싱되는지 검사합니다.
 - [ ] **Roblox 목 테스트는 실제 Roblox 환경에서 한 번도 검증되지 않았습니다.** 이 저장소는 `luau`/
       `lune` 로만 실행 가능해서 `mockVector2` 같은 목 테이블이 실제 Roblox 데이터타입의 동작과
       진짜로 일치하는지는 육안 검토로만 확인했습니다. Rojo + Studio 테스트 러너(또는 test-cli 같은
@@ -77,6 +106,8 @@ scripts/
 
 ## 참고
 
+- 새 스키마 타입을 추가하면 `test/luauBuild.luau` 의 `samples` 에도 추가하세요. 빠뜨리면 그 파일의
+  커버리지 검사가 실패합니다.
 - `test/run.luau` 에 새 스키마 타입을 추가할 땐 `require` 대상을 항상 문자열 **리터럴**로 쓰세요.
   동적 경로(테이블에 경로를 담고 루프 도는 방식)도 시도해봤는데 "ambiguous" 오류가 나서 리터럴
   나열 방식으로 되돌렸습니다.

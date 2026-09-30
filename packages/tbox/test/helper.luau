@@ -36,6 +36,15 @@ function Helper.expectError(fn: () -> (), expected: string)
     end
 end
 
+-- luauBuild 결과가 Luau 타입 문법으로 파싱되는지 확인한다. loadstring 은 파싱(컴파일)만 하므로
+-- 이름 해석이나 타입 검사는 하지 않는다 — Roblox 타입 이름(Vector3 등)이 이 환경에 없어도 통과한다.
+function Helper.expectParsableType(source: string)
+    const chunk, err = loadstring(`type T = {source}\nreturn nil`)
+    if not chunk then
+        error(`generated luau type does not parse:\n  {source}\n  {err}`, 2)
+    end
+end
+
 -- 두 값이 정확히 같은지 확인한다 (luauBuild/format 결과 비교용)
 function Helper.expectEqual(actual: any, expected: any)
     if actual ~= expected then
