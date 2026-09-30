@@ -17,7 +17,7 @@
   `typeof()` 는 `"Vector3"` 를 반환합니다. standalone 에서 `typeof(vector.create(1,2,3))` 는 `"vector"` 입니다
   (확인함). 기존 `src/schema/vector.luau` (네이티브 `vector`) 와 `roblox/vector3.luau` 는 별개 타입으로 다뤄야 합니다.
   **단, Roblox 안에서는 `typeof(vector.create(1,2,3))` 도 `"Vector3"` 입니다** (Studio 에서 확인). 즉 Roblox 에서는
-  두 값이 구별되지 않으며, `typeof == "vector"` 로 판별하는 `TVector` 는 Roblox 에서 진짜 vector 를 거부합니다
+  두 값이 구별되지 않으므로 `TVector` 는 `typeof` 가 `"vector"` 또는 `"Vector3"` 인 값을 모두 받습니다
   (아래 4절 참고).
 
 ## 1. typeof 문자열 표

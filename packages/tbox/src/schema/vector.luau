@@ -34,7 +34,9 @@ end
 const function runtimeTypeChecker(schema: TVector, value: any): (() -> string)?
     const ty = typeof(value)
 
-    if ty ~= "vector" then
+    -- Roblox 에서는 네이티브 vector 가 곧 Vector3 이라 typeof(vector.create(...)) 가 "Vector3" 이다
+    -- (Studio 에서 확인, RobloxApi.md 4절). 같은 값이므로 둘 다 받는다. standalone luau 에서는 "vector" 다.
+    if ty ~= "vector" and ty ~= "Vector3" then
         return function()
             return `vector expected, but got {ty}`
         end

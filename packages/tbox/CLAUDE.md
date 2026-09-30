@@ -226,7 +226,7 @@ Roblox 타입을 다룰 때 알아야 할 것:
   재현할 수 없습니다 — CLI 쪽에서는 넘어가고, 실제 값 검사는 `test/studio/roblox/` 에 추가하세요.
 - `src/schema/vector.luau` (네이티브 `vector`, `typeof == "vector"`) 와 `roblox/vector3.luau`
   (Roblox `Vector3`, `typeof == "Vector3"`) 는 별개 타입입니다. 단 Roblox 안에서는 `typeof(vector.create(...))`
-  도 `"Vector3"` 라서 `TVector` 가 진짜 vector 를 거부합니다 (미결정 이슈, `test/schema/vector.luau` 의 pending 참고).
+  도 `"Vector3"` 이므로(같은 값) `TVector` 는 `"vector"` 와 `"Vector3"` 를 모두 받습니다.
 - `Instance` 와 `EnumItem` 은 `TUnsafe<T>` 처럼 정적 타입을 명시적 타입 인자로 받습니다:
   `Type.Instance<<BasePart>>("BasePart")`, `Type.EnumItem<<Enum.Material>>(Enum.Material)`.
   런타임 판별에 필요한 정보(클래스명, Enum 객체)는 별도로 첫 인자로 넘깁니다.
